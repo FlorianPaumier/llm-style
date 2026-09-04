@@ -15,6 +15,7 @@ class AppConfig:
     default_city: str = "Paris"
     default_model: str = "dolphin-mistral:7b"
     default_ollama_url: str = "http://localhost:11434"
+    default_vision_model: str = "gemma3:4b"
 
 
 def load_config() -> AppConfig:
@@ -24,4 +25,5 @@ def load_config() -> AppConfig:
         default_city=os.environ.get("LLM_STYLE_CITY", "Paris"),
         default_model=os.environ.get("LLM_STYLE_MODEL", "dolphin-mistral:7b"),
         default_ollama_url=os.environ.get("LLM_STYLE_OLLAMA_URL", "http://localhost:11434"),
+        default_vision_model=os.environ.get("LLM_STYLE_VISION_MODEL", "gemma3:4b"),
     )

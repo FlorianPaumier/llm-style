@@ -37,6 +37,12 @@ CREATE TABLE IF NOT EXISTS outfit_history (
 );
 """
 
+# Additive migrations for databases created before a column existed.
+MIGRATIONS = [
+    "ALTER TABLE items ADD COLUMN image_path TEXT",
+    "ALTER TABLE settings ADD COLUMN vision_model TEXT",
+]
+
 
 def connect(db_path: Path | str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
@@ -52,6 +58,12 @@ def init_db(db_path: Path | str) -> None:
         conn.executescript(SCHEMA)
         # Settings is a single-row table; seed the default row once.
         conn.execute("INSERT OR IGNORE INTO settings (id) VALUES (1)")
+        for sql in MIGRATIONS:
+            try:
+                conn.execute(sql)  # duplicate column -> already migrated
+            except sqlite3.OperationalError as exc:
+                if "duplicate column" not in str(exc):
+                    raise
         conn.commit()
     finally:
         conn.close()

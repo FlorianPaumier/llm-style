@@ -4,7 +4,10 @@ from __future__ import annotations
 import sqlite3
 
 _SELECT = "SELECT * FROM settings WHERE id = 1"
-_UPDATE = "UPDATE settings SET city = ?, model = ?, ollama_url = ? WHERE id = 1"
+_UPDATE = (
+    "UPDATE settings SET city = ?, model = ?, ollama_url = ?, vision_model = ? "
+    "WHERE id = 1"
+)
 
 
 def get(conn: sqlite3.Connection) -> dict:
@@ -16,7 +19,13 @@ def get(conn: sqlite3.Connection) -> dict:
     return dict(row)
 
 
-def update(conn: sqlite3.Connection, city: str, model: str, ollama_url: str) -> dict:
-    conn.execute(_UPDATE, (city, model, ollama_url))
+def update(
+    conn: sqlite3.Connection,
+    city: str,
+    model: str,
+    ollama_url: str,
+    vision_model: str,
+) -> dict:
+    conn.execute(_UPDATE, (city, model, ollama_url, vision_model))
     conn.commit()
     return get(conn)

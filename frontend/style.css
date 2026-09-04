@@ -124,6 +124,26 @@ th, td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
 .outfit-piece .slot { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-family: -apple-system, sans-serif; }
 .outfit-piece .name { font-size: 1rem; }
 
+.photo-row { margin-bottom: 0.4rem; }
+.photo-drop {
+  border: 1.5px dashed var(--line);
+  border-radius: 8px;
+  padding: 0.9rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  background: #fff;
+}
+.photo-drop:hover, .photo-drop.dragover { border-color: var(--accent); }
+.photo-drop img { max-height: 160px; max-width: 100%; border-radius: 6px; }
+.photo-drop .hint { display: block; }
+
+.thumb {
+  width: 38px; height: 38px; object-fit: cover; border-radius: 6px;
+  border: 1px solid var(--line); display: block;
+}
+.thumb-empty { color: var(--line); font-size: 1.1rem; }
+
 .rationale { font-style: italic; color: var(--ink); }
 .gaps { color: var(--muted); font-size: 0.85rem; font-family: -apple-system, sans-serif; }
 .gaps li { margin-bottom: 0.2rem; }

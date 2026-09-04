@@ -1,20 +1,4 @@
 """API tests via TestClient: CRUD, validation, settings, recommend wiring."""
-import pytest
-from fastapi.testclient import TestClient
-
-from app.config import AppConfig
-from app.main import create_app
-
-
-@pytest.fixture()
-def api(tmp_path):
-    cfg = AppConfig(db_path=tmp_path / "api.db")
-    app = create_app(cfg)
-    # `with` runs the lifespan so app.state.weather/recommender exist.
-    with TestClient(app) as client:
-        yield client, app
-
-
 ITEM = {
     "name": "Navy tee",
     "type": "top",
@@ -60,6 +44,7 @@ class TestSettingsApi:
             "city": "Paris",
             "model": "dolphin-mistral:7b",
             "ollama_url": "http://localhost:11434",
+            "vision_model": "gemma3:4b",
         }
         r = client.put("/api/settings", json={"city": "Lyon"})
         assert r.json()["city"] == "Lyon"

@@ -1,12 +1,13 @@
-// Wardrobe page: item CRUD with inline edit.
+// Wardrobe page: item CRUD with inline edit, plus photo -> AI draft.
 "use strict";
 
 const $ = (id) => document.getElementById(id);
 let allItems = [];
+let pendingFile = null; // File chosen in the form, not yet saved
 
 async function api(path, options) {
   const res = await fetch(path, {
-    headers: { "Content-Type": "application/json" },
+    headers: options && options.body instanceof FormData ? {} : { "Content-Type": "application/json" },
     ...options,
   });
   if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || res.statusText);
@@ -22,6 +23,7 @@ function itemFromForm() {
     formality: parseInt($("formality").value, 10),
     style_tags: $("style-tags").value.trim() || null,
     notes: $("notes").value.trim() || null,
+    image_path: $("image-path").value || null,
   };
 }
 
@@ -34,11 +36,21 @@ function formFromItem(it) {
   $("formality").value = it.formality;
   $("style-tags").value = it.style_tags || "";
   $("notes").value = it.notes || "";
+  // Editing an existing item: show its saved photo (or none).
+  setPendingFile(null);
+  const path = it.image_path || null;
+  $("image-path").value = path || "";
+  if (path) {
+    showPreview(`/api/items/${it.id}/photo`);
+  }
 }
 
 function resetForm() {
   $("item-form").reset();
   $("item-id").value = "";
+  $("image-path").value = "";
+  setPendingFile(null);
+  hidePreview();
   $("form-title").textContent = "Add an item";
   $("save-btn").textContent = "Add item";
   $("cancel-btn").hidden = true;
@@ -60,6 +72,21 @@ function render() {
   tbody.innerHTML = "";
   for (const it of items) {
     const tr = document.createElement("tr");
+
+    const thumbCell = document.createElement("td");
+    if (it.image_path) {
+      const img = document.createElement("img");
+      img.className = "thumb";
+      img.src = `/api/items/${it.id}/photo`;
+      img.alt = it.name;
+      thumbCell.append(img);
+    } else {
+      const span = document.createElement("span");
+      span.className = "thumb-empty";
+      span.textContent = "—";
+      thumbCell.append(span);
+    }
+    tr.append(thumbCell);
 
     const cells = [
       it.name,
@@ -123,5 +150,77 @@ $("item-form").addEventListener("submit", async (e) => {
 
 $("cancel-btn").onclick = resetForm;
 $("filter-type").onchange = render;
+
+// --- Photo upload & AI classification ---------------------------------
+
+function setPendingFile(file) {
+  pendingFile = file;
+  $("classify-btn").disabled = !file;
+  $("classify-status").textContent = "";
+  $("photo-remove").hidden = !file && !$("image-path").value;
+  if (file) {
+    showPreview(URL.createObjectURL(file));
+  }
+}
+
+function showPreview(src) {
+  $("photo-preview").src = src;
+  $("photo-preview").hidden = false;
+  $("photo-hint").hidden = true;
+}
+
+function hidePreview() {
+  $("photo-preview").hidden = true;
+  $("photo-preview").src = "";
+  $("photo-hint").hidden = false;
+}
+
+const drop = $("photo-drop");
+drop.onclick = () => $("photo-input").click();
+drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("dragover"); });
+drop.addEventListener("dragleave", () => drop.classList.remove("dragover"));
+drop.addEventListener("drop", (e) => {
+  e.preventDefault();
+  drop.classList.remove("dragover");
+  const file = e.dataTransfer.files && e.dataTransfer.files[0];
+  if (file) setPendingFile(file);
+});
+$("photo-input").onchange = () => {
+  const file = $("photo-input").files && $("photo-input").files[0];
+  if (file) setPendingFile(file);
+};
+$("photo-remove").onclick = () => {
+  $("image-path").value = "";
+  setPendingFile(null);
+  hidePreview();
+};
+
+$("classify-btn").onclick = async () => {
+  if (!pendingFile) return;
+  const btn = $("classify-btn");
+  btn.disabled = true;
+  $("classify-status").textContent = "Asking the vision model… (up to ~30s)";
+  try {
+    const fd = new FormData();
+    fd.append("photo", pendingFile, pendingFile.name);
+    const draft = await api("/api/classify", { method: "POST", body: fd });
+    // Pre-fill the form: the draft is a suggestion, the user reviews it.
+    $("name").value = draft.name;
+    $("type").value = draft.type;
+    if (draft.color) $("color").value = draft.color;
+    $("warmth").value = draft.warmth;
+    $("formality").value = draft.formality;
+    if (draft.style_tags) $("style-tags").value = draft.style_tags;
+    $("image-path").value = draft.image_path || "";
+    $("photo-remove").hidden = false;
+    $("classify-status").textContent = "Draft filled in — review the scores before saving.";
+  } catch (err) {
+    $("classify-status").textContent = "";
+    $("form-error").textContent = "Classification failed: " + err.message;
+    btn.disabled = false;
+    return;
+  }
+  btn.disabled = false;
+};
 
 refresh();

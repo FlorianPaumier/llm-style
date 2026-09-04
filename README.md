@@ -15,6 +15,7 @@ wardrobe (SQLite) ──┴─> CandidateSelector ──> ~20 candidates ──>
 
 - **CandidateSelector** narrows the wardrobe by weather-driven warmth bands and occasion-driven formality bands, guarantees every clothing slot is covered, and relaxes constraints when the wardrobe can't. This keeps the prompt small — a 3–8B model stays reliable.
 - **LLM stylist** sees only the compact candidate list plus your mood, picks one outfit, and explains why it fits. Answers are validated (IDs must be real candidates); a bad answer gets one retry, then a deterministic safe pick.
+- **Photo classification**: drop a photo of a clothing item on the Wardrobe page and a vision model (`gemma3:4b`) drafts the item — name, type, color, warmth, formality, style tags — into the form for you to review and save. The draft is a suggestion, not the truth: misjudged warmth/formality would silently skew recommendations, so you always give the final glance before saving. Photos are stored locally under `data/images/` and shown as thumbnails.
 - Everything degrades gracefully: no weather → mild-day assumption (or manual override); no Ollama → fallback outfit with a note; missing slots → a named gap telling you what to buy.
 
 ## Setup
@@ -26,8 +27,9 @@ cd backend
 python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 
-# pull a stylist model (any small chat model works; default is dolphin-mistral:7b)
+# pull the two models (stylist + vision; or change them in Settings)
 ollama pull dolphin-mistral:7b
+ollama pull gemma3:4b
 
 # optional: sample wardrobe (31 items) so you can try it immediately
 .venv/bin/python ../scripts/seed_wardrobe.py
@@ -36,9 +38,9 @@ ollama pull dolphin-mistral:7b
 .venv/bin/uvicorn app.main:app
 ```
 
-Open http://localhost:8000 — three pages: **Ask** (mood → outfit), **Wardrobe** (CRUD), **Settings** (city, model, Ollama URL).
+Open http://localhost:8000 — three pages: **Ask** (mood → outfit), **Wardrobe** (CRUD + photo classification), **Settings** (city, models, Ollama URL).
 
-> First request after pulling a model can take ~10–30s while Ollama loads it into memory; subsequent calls are fast.
+> First request after pulling a model can take ~10–30s while Ollama loads it into memory; subsequent calls are fast. Photo classification takes ~20s per photo on an M1.
 
 ## Wardrobe items
 
@@ -54,7 +56,7 @@ cd backend
 
 ## Configuration
 
-Defaults via env vars: `LLM_STYLE_DB`, `LLM_STYLE_CITY` (Paris), `LLM_STYLE_MODEL` (dolphin-mistral:7b), `LLM_STYLE_OLLAMA_URL`. The Settings page overrides city/model/URL per instance.
+Defaults via env vars: `LLM_STYLE_DB`, `LLM_STYLE_CITY` (Paris), `LLM_STYLE_MODEL` (dolphin-mistral:7b), `LLM_STYLE_VISION_MODEL` (gemma3:4b), `LLM_STYLE_OLLAMA_URL`. The Settings page overrides them per instance.
 
 ## Project layout
 

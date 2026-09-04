@@ -21,7 +21,21 @@
       <h2 id="form-title">Add an item</h2>
       <form id="item-form">
         <input type="hidden" id="item-id">
+        <input type="hidden" id="image-path">
         <div class="form-grid">
+          <div class="wide photo-row">
+            <label for="photo-input">Photo (optional — let the stylist describe it)</label>
+            <div class="photo-drop" id="photo-drop">
+              <img id="photo-preview" alt="" hidden>
+              <span id="photo-hint">Drop a photo here, or click to choose</span>
+              <input type="file" id="photo-input" accept=".jpg,.jpeg,.png,.webp" hidden>
+            </div>
+            <div class="actions">
+              <button type="button" class="primary" id="classify-btn" disabled>Describe from photo</button>
+              <button type="button" id="photo-remove" hidden>Remove photo</button>
+              <span class="muted" id="classify-status"></span>
+            </div>
+          </div>
           <div>
             <label for="name">Name</label>
             <input id="name" required maxlength="100" placeholder="Navy linen shirt">
@@ -80,7 +94,7 @@
       </div>
       <table>
         <thead>
-          <tr><th>Name</th><th>Type</th><th>Color</th><th>Warmth</th><th>Formality</th><th>Tags</th><th></th></tr>
+          <tr><th></th><th>Name</th><th>Type</th><th>Color</th><th>Warmth</th><th>Formality</th><th>Tags</th><th></th></tr>
         </thead>
         <tbody id="items-tbody"></tbody>
       </table>

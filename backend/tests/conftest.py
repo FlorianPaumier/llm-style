@@ -4,6 +4,11 @@ from __future__ import annotations
 import sqlite3
 
 import pytest
+from fastapi.testclient import TestClient
+
+from app.config import AppConfig
+from app.main import create_app
+
 
 from app.config import AppConfig
 from app.db import init_db
@@ -63,7 +68,7 @@ class ScriptedProvider:
         self.replies = list(replies)
         self.calls: list[list[dict]] = []
 
-    def complete(self, messages, model):
+    def complete(self, messages, model, temperature=0.7):
         self.calls.append(messages)
         if not self.replies:
             raise AssertionError("ScriptedProvider ran out of scripted replies")
@@ -96,3 +101,12 @@ class FakeWeatherService:
             weather_code=0,
             fetched_at="2026-01-01T00:00:00+00:00",
         )
+
+
+@pytest.fixture()
+def api(tmp_path):
+    """FastAPI TestClient with lifespan run (app.state populated)."""
+    cfg = AppConfig(db_path=tmp_path / "api.db")
+    app = create_app(cfg)
+    with TestClient(app) as client:
+        yield client, app

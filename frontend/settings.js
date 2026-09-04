@@ -8,6 +8,7 @@ async function load() {
   const s = await res.json();
   $("city").value = s.city;
   $("model").value = s.model;
+  $("vision-model").value = s.vision_model;
   $("ollama-url").value = s.ollama_url;
 }
 
@@ -20,6 +21,7 @@ $("settings-form").addEventListener("submit", async (e) => {
     body: JSON.stringify({
       city: $("city").value.trim() || null,
       model: $("model").value.trim() || null,
+      vision_model: $("vision-model").value.trim() || null,
       ollama_url: $("ollama-url").value.trim() || null,
     }),
   });

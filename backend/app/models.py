@@ -18,6 +18,7 @@ class ItemIn(BaseModel):
     formality: int = Field(ge=1, le=5)
     style_tags: str | None = Field(default=None, max_length=200)
     notes: str | None = Field(default=None, max_length=500)
+    image_path: str | None = Field(default=None, max_length=300)
 
 
 class Item(ItemIn):
@@ -32,12 +33,25 @@ class SettingsIn(BaseModel):
     city: str | None = Field(default=None, max_length=100)
     model: str | None = Field(default=None, max_length=100)
     ollama_url: str | None = Field(default=None, max_length=300)
+    vision_model: str | None = Field(default=None, max_length=100)
 
 
 class Settings(BaseModel):
     city: str
     model: str
     ollama_url: str
+    vision_model: str
+
+
+class DraftItemResponse(BaseModel):
+    """Vision-model draft of a wardrobe item, for user review in the form."""
+    name: str
+    type: ItemType
+    color: str | None
+    warmth: int
+    formality: int
+    style_tags: str | None
+    image_path: str | None = None
 
 
 class Weather(BaseModel):

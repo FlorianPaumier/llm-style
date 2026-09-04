@@ -6,25 +6,26 @@ import sqlite3
 from ..models import ItemIn
 
 _INSERT = """
-INSERT INTO items (name, type, color, warmth, formality, style_tags, notes)
-VALUES (?, ?, ?, ?, ?, ?, ?)
+INSERT INTO items (name, type, color, warmth, formality, style_tags, notes, image_path)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 """
 _SELECT_ALL = "SELECT * FROM items ORDER BY id"
 _SELECT_BY_ID = "SELECT * FROM items WHERE id = ?"
 _SELECT_BY_IDS = "SELECT * FROM items WHERE id IN ({placeholders})"
 _UPDATE = """
 UPDATE items SET name = ?, type = ?, color = ?, warmth = ?, formality = ?,
-                  style_tags = ?, notes = ?
+                  style_tags = ?, notes = ?, image_path = ?
 WHERE id = ?
 """
 _DELETE = "DELETE FROM items WHERE id = ?"
+_UPDATE_IMAGE = "UPDATE items SET image_path = ? WHERE id = ?"
 
 
 def create(conn: sqlite3.Connection, item: ItemIn) -> dict:
     cur = conn.execute(
         _INSERT,
         (item.name, item.type, item.color, item.warmth, item.formality,
-         item.style_tags, item.notes),
+         item.style_tags, item.notes, item.image_path),
     )
     conn.commit()
     return get(conn, cur.lastrowid)
@@ -54,7 +55,7 @@ def update(conn: sqlite3.Connection, item_id: int, item: ItemIn) -> dict | None:
     conn.execute(
         _UPDATE,
         (item.name, item.type, item.color, item.warmth, item.formality,
-         item.style_tags, item.notes, item_id),
+         item.style_tags, item.notes, item.image_path, item_id),
     )
     conn.commit()
     return get(conn, item_id)
@@ -64,3 +65,8 @@ def delete(conn: sqlite3.Connection, item_id: int) -> bool:
     cur = conn.execute(_DELETE, (item_id,))
     conn.commit()
     return cur.rowcount > 0
+
+
+def update_image_path(conn: sqlite3.Connection, item_id: int, image_path: str | None) -> None:
+    conn.execute(_UPDATE_IMAGE, (image_path, item_id))
+    conn.commit()

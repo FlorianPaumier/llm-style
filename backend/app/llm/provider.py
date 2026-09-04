@@ -14,9 +14,18 @@ import httpx
 
 
 class LlmProvider(Protocol):
-    def complete(self, messages: list[dict], model: str) -> str:
+    def complete(self, messages: list[dict], model: str, temperature: float = 0.7) -> str:
         """Return the model's reply text for a chat-format message list."""
         ...
+
+
+def image_message(text: str, image_b64: str) -> dict:
+    """Build an Ollama multimodal user message: text plus one base64 image."""
+    return {
+        "role": "user",
+        "content": text,
+        "images": [image_b64],
+    }
 
 
 _JSON_FENCE_RE = re.compile(r"```(?:json)?\s*(.*?)\s*```", re.DOTALL)
@@ -50,7 +59,7 @@ class OllamaProvider:
         self._base_url = base_url.rstrip("/")
         self._client = client or httpx.Client(timeout=httpx.Timeout(timeout))
 
-    def complete(self, messages: list[dict], model: str) -> str:
+    def complete(self, messages: list[dict], model: str, temperature: float = 0.7) -> str:
         resp = self._client.post(
             f"{self._base_url}/api/chat",
             json={
@@ -58,7 +67,7 @@ class OllamaProvider:
                 "messages": messages,
                 "stream": False,
                 "format": "json",
-                "options": {"temperature": 0.7},
+                "options": {"temperature": temperature},
             },
         )
         resp.raise_for_status()
