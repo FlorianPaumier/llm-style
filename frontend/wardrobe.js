@@ -5,6 +5,12 @@ const $ = (id) => document.getElementById(id);
 let allItems = [];
 let pendingFile = null; // File chosen in the form, not yet saved
 
+// Table view state: current sort column/direction and page.
+const PAGE_SIZE = 10;
+let sortKey = null;   // null = table order (by id)
+let sortAsc = true;
+let page = 1;
+
 async function api(path, options) {
   const res = await fetch(path, {
     headers: options && options.body instanceof FormData ? {} : { "Content-Type": "application/json" },
@@ -62,15 +68,59 @@ async function refresh() {
   render();
 }
 
-function render() {
+function visibleItems() {
   const filter = $("filter-type").value;
-  const items = filter ? allItems.filter((i) => i.type === filter) : allItems;
+  let items = filter ? allItems.filter((i) => i.type === filter) : allItems.slice();
+
+  if (sortKey) {
+    const dir = sortAsc ? 1 : -1;
+    items.sort((a, b) => {
+      const va = a[sortKey] ?? "";
+      const vb = b[sortKey] ?? "";
+      // Numeric columns sort numerically; everything else case-insensitively.
+      if (typeof va === "number" && typeof vb === "number") return (va - vb) * dir;
+      return String(va).localeCompare(String(vb), undefined, { sensitivity: "base" }) * dir;
+    });
+  }
+  return items;
+}
+
+function updateSortHeaders() {
+  document.querySelectorAll("th.sortable").forEach((th) => {
+    th.classList.toggle("asc", sortKey === th.dataset.key && sortAsc);
+    th.classList.toggle("desc", sortKey === th.dataset.key && !sortAsc);
+  });
+}
+
+function clampPage(pageCount) {
+  if (page > pageCount) page = pageCount;
+  if (page < 1) page = 1;
+}
+
+function render() {
+  const items = visibleItems();
+  const pageCount = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  clampPage(pageCount);
+  const start = (page - 1) * PAGE_SIZE;
+  const pageItems = items.slice(start, start + PAGE_SIZE);
+
   $("count").textContent = allItems.length;
   $("empty-hint").hidden = allItems.length > 0;
+  updateSortHeaders();
+
+  // Pager state.
+  $("prev-page").disabled = page <= 1;
+  $("next-page").disabled = page >= pageCount;
+  $("page-info").textContent = items.length
+    ? `Page ${page} of ${pageCount}`
+    : "No items";
+  $("showing-info").textContent = items.length
+    ? `Showing ${start + 1}–${Math.min(start + PAGE_SIZE, items.length)} of ${items.length}`
+    : "";
 
   const tbody = $("items-tbody");
   tbody.innerHTML = "";
-  for (const it of items) {
+  for (const it of pageItems) {
     const tr = document.createElement("tr");
 
     const thumbCell = document.createElement("td");
@@ -149,7 +199,35 @@ $("item-form").addEventListener("submit", async (e) => {
 });
 
 $("cancel-btn").onclick = resetForm;
-$("filter-type").onchange = render;
+$("filter-type").onchange = () => {
+  page = 1; // a new filter can shrink the visible set
+  render();
+};
+
+// --- Sorting & pagination --------------------------------------------
+
+document.querySelectorAll("th.sortable").forEach((th) => {
+  th.onclick = () => {
+    const key = th.dataset.key;
+    if (sortKey === key) {
+      sortAsc = !sortAsc; // same column: flip direction
+    } else {
+      sortKey = key;
+      sortAsc = true;
+    }
+    page = 1; // re-sorted list restarts at the first page
+    render();
+  };
+});
+
+$("prev-page").onclick = () => {
+  page -= 1;
+  render();
+};
+$("next-page").onclick = () => {
+  page += 1;
+  render();
+};
 
 // --- Photo upload & AI classification ---------------------------------
 

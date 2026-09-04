@@ -106,6 +106,16 @@ table { width: 100%; border-collapse: collapse; font-family: -apple-system, "Hel
 th { text-align: left; color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
 th, td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
 
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: var(--accent); }
+th.sortable::after { content: " ↕"; font-size: 0.7rem; opacity: 0.6; }
+th.sortable.asc::after { content: " ↑"; opacity: 1; color: var(--accent); }
+th.sortable.desc::after { content: " ↓"; opacity: 1; color: var(--accent); }
+
+.pager { margin-top: 0.8rem; }
+.pager button { padding: 0.25rem 0.7rem; }
+.pager button:disabled { opacity: 0.35; cursor: default; }
+
 .chip {
   display: inline-block;
   background: var(--chip);

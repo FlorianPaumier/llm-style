@@ -59,12 +59,24 @@
             <input id="style-tags" maxlength="200" placeholder="minimal, summer">
           </div>
           <div>
-            <label for="warmth">Warmth (1 = light … 5 = heavy)</label>
-            <input type="number" id="warmth" min="1" max="5" value="2" required>
+            <label for="warmth">Warmth</label>
+            <select id="warmth">
+              <option value="1">1 · very light</option>
+              <option value="2" selected>2 · light</option>
+              <option value="3">3 · medium</option>
+              <option value="4">4 · warm</option>
+              <option value="5">5 · heavy</option>
+            </select>
           </div>
           <div>
-            <label for="formality">Formality (1 = gym … 5 = black tie)</label>
-            <input type="number" id="formality" min="1" max="5" value="2" required>
+            <label for="formality">Formality</label>
+            <select id="formality">
+              <option value="1">1 · gym</option>
+              <option value="2" selected>2 · casual</option>
+              <option value="3">3 · smart-casual</option>
+              <option value="4">4 · smart</option>
+              <option value="5">5 · black tie</option>
+            </select>
           </div>
           <div class="wide">
             <label for="notes">Notes</label>
@@ -94,10 +106,26 @@
       </div>
       <table>
         <thead>
-          <tr><th></th><th>Name</th><th>Type</th><th>Color</th><th>Warmth</th><th>Formality</th><th>Tags</th><th></th></tr>
+          <tr>
+            <th></th>
+            <th class="sortable" data-key="name" data-label="Name">Name</th>
+            <th class="sortable" data-key="type" data-label="Type">Type</th>
+            <th class="sortable" data-key="color" data-label="Color">Color</th>
+            <th class="sortable" data-key="warmth" data-label="Warmth">Warmth</th>
+            <th class="sortable" data-key="formality" data-label="Formality">Formality</th>
+            <th class="sortable" data-key="style_tags" data-label="Tags">Tags</th>
+            <th></th>
+          </tr>
         </thead>
         <tbody id="items-tbody"></tbody>
       </table>
+      <div class="actions pager">
+        <button id="prev-page">‹ Prev</button>
+        <span class="muted" id="page-info"></span>
+        <button id="next-page">Next ›</button>
+        <div class="spacer"></div>
+        <span class="muted" id="showing-info"></span>
+      </div>
       <p class="muted" id="empty-hint" hidden>Nothing here yet — add your first item above, or run the seed script for a sample wardrobe.</p>
     </div>
   </main>
