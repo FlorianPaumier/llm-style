@@ -31,7 +31,7 @@ def recommend(conn, svc, weather, mood="chill today", occasion="casual", overrid
         conn=conn,
         config=cfg,
         city="Paris",
-        model="gemma3:12b",
+        model="dolphin-mistral:7b",
         ollama_url="http://localhost:11434",
         weather_service=weather,
         mood=mood,

@@ -22,14 +22,14 @@ def test_ollama_sends_chat_format_json_request():
     client = httpx.Client(transport=httpx.MockTransport(handler))
     provider = OllamaProvider("http://localhost:11434/", client=client)
     reply = provider.complete(
-        [{"role": "user", "content": "hi"}], model="gemma3:12b"
+        [{"role": "user", "content": "hi"}], model="dolphin-mistral:7b"
     )
     assert reply == '{"ok": true}'
     assert captured["url"] == "http://localhost:11434/api/chat"
     import json
 
     body = json.loads(captured["body"])
-    assert body["model"] == "gemma3:12b"
+    assert body["model"] == "dolphin-mistral:7b"
     assert body["format"] == "json"
     assert body["stream"] is False
     assert body["messages"] == [{"role": "user", "content": "hi"}]

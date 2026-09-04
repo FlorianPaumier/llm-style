@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>llm-style — settings</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1><em>llm</em>-style</h1>
+    <nav>
+      <a href="index.html">Ask</a>
+      <a href="wardrobe.html">Wardrobe</a>
+      <a href="settings.html" class="active">Settings</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Settings</h2>
+      <form id="settings-form">
+        <div class="form-grid">
+          <div>
+            <label for="city">City (for live weather)</label>
+            <input id="city" maxlength="100" placeholder="Paris">
+          </div>
+          <div>
+            <label for="model">Ollama model</label>
+            <input id="model" maxlength="100" placeholder="dolphin-mistral:7b">
+          </div>
+          <div class="wide">
+            <label for="ollama-url">Ollama URL</label>
+            <input id="ollama-url" maxlength="300" placeholder="http://localhost:11434">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary">Save</button>
+          <span class="muted" id="status"></span>
+        </div>
+      </form>
+      <p class="muted">The stylist runs on your machine via Ollama — your wardrobe never leaves it.</p>
+    </div>
+  </main>
+
+  <script src="settings.js"></script>
+</body>
+</html>

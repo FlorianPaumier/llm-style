@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>llm-style — wardrobe</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1><em>llm</em>-style</h1>
+    <nav>
+      <a href="index.html">Ask</a>
+      <a href="wardrobe.html" class="active">Wardrobe</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2 id="form-title">Add an item</h2>
+      <form id="item-form">
+        <input type="hidden" id="item-id">
+        <div class="form-grid">
+          <div>
+            <label for="name">Name</label>
+            <input id="name" required maxlength="100" placeholder="Navy linen shirt">
+          </div>
+          <div>
+            <label for="type">Type</label>
+            <select id="type">
+              <option value="top">Top</option>
+              <option value="bottom">Bottom</option>
+              <option value="shoes">Shoes</option>
+              <option value="outerwear">Outerwear</option>
+              <option value="accessory">Accessory</option>
+            </select>
+          </div>
+          <div>
+            <label for="color">Color</label>
+            <input id="color" maxlength="50" placeholder="navy">
+          </div>
+          <div>
+            <label for="style-tags">Style tags</label>
+            <input id="style-tags" maxlength="200" placeholder="minimal, summer">
+          </div>
+          <div>
+            <label for="warmth">Warmth (1 = light … 5 = heavy)</label>
+            <input type="number" id="warmth" min="1" max="5" value="2" required>
+          </div>
+          <div>
+            <label for="formality">Formality (1 = gym … 5 = black tie)</label>
+            <input type="number" id="formality" min="1" max="5" value="2" required>
+          </div>
+          <div class="wide">
+            <label for="notes">Notes</label>
+            <input id="notes" maxlength="500" placeholder="fits great with the cream tee">
+          </div>
+        </div>
+        <div class="actions">
+          <button type="submit" class="primary" id="save-btn">Add item</button>
+          <button type="button" id="cancel-btn" hidden>Cancel</button>
+          <span class="error" id="form-error"></span>
+        </div>
+      </form>
+    </div>
+
+    <div class="card">
+      <div class="actions" style="margin-bottom: 1rem;">
+        <h2 style="margin: 0;">Your wardrobe (<span id="count">0</span>)</h2>
+        <div class="spacer"></div>
+        <select id="filter-type" style="width: auto;">
+          <option value="">all types</option>
+          <option value="top">tops</option>
+          <option value="bottom">bottoms</option>
+          <option value="shoes">shoes</option>
+          <option value="outerwear">outerwear</option>
+          <option value="accessory">accessories</option>
+        </select>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Name</th><th>Type</th><th>Color</th><th>Warmth</th><th>Formality</th><th>Tags</th><th></th></tr>
+        </thead>
+        <tbody id="items-tbody"></tbody>
+      </table>
+      <p class="muted" id="empty-hint" hidden>Nothing here yet — add your first item above, or run the seed script for a sample wardrobe.</p>
+    </div>
+  </main>
+
+  <script src="wardrobe.js"></script>
+</body>
+</html>

@@ -1,0 +1,134 @@
+:root {
+  --bg: #faf9f7;
+  --card: #ffffff;
+  --ink: #2b2a28;
+  --muted: #8a867f;
+  --line: #e8e5e0;
+  --accent: #b4552d;
+  --accent-soft: #f3e3da;
+  --chip: #f1efec;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Georgia", "Times New Roman", serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+header {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5rem;
+  padding: 1.2rem 2rem;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+header h1 {
+  font-size: 1.4rem;
+  margin: 0;
+  font-weight: normal;
+  letter-spacing: 0.04em;
+}
+
+header h1 em { color: var(--accent); font-style: italic; }
+
+nav a {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  margin-right: 1rem;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+}
+
+nav a.active, nav a:hover { color: var(--accent); }
+
+main { max-width: 880px; margin: 2rem auto; padding: 0 1.5rem; }
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 1.4rem 1.6rem;
+  margin-bottom: 1.2rem;
+}
+
+h2 { font-weight: normal; font-size: 1.15rem; margin: 0 0 1rem; }
+
+button {
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--ink);
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+}
+
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+button.primary:disabled { opacity: 0.5; cursor: wait; }
+button.danger { color: #a33; }
+
+input, select, textarea {
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 0.95rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+}
+
+textarea { resize: vertical; }
+
+label {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin-bottom: 0.25rem;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+table { width: 100%; border-collapse: collapse; font-family: -apple-system, "Helvetica Neue", sans-serif; font-size: 0.9rem; }
+th { text-align: left; color: var(--muted); font-weight: 500; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+th, td { padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
+
+.chip {
+  display: inline-block;
+  background: var(--chip);
+  border-radius: 999px;
+  padding: 0.15rem 0.7rem;
+  font-size: 0.8rem;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  color: var(--muted);
+}
+
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.8rem 1.2rem; }
+.form-grid .wide { grid-column: 1 / -1; }
+
+#result .outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.8rem; margin: 1rem 0; }
+.outfit-piece { background: var(--accent-soft); border-radius: 8px; padding: 0.7rem 0.9rem; }
+.outfit-piece .slot { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); font-family: -apple-system, sans-serif; }
+.outfit-piece .name { font-size: 1rem; }
+
+.rationale { font-style: italic; color: var(--ink); }
+.gaps { color: var(--muted); font-size: 0.85rem; font-family: -apple-system, sans-serif; }
+.gaps li { margin-bottom: 0.2rem; }
+
+.actions { display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; }
+.actions .spacer { flex: 1; }
+.muted { color: var(--muted); font-size: 0.85rem; font-family: -apple-system, sans-serif; }
+.error { color: #a33; font-family: -apple-system, sans-serif; font-size: 0.9rem; }

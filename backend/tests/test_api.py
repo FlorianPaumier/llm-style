@@ -58,12 +58,12 @@ class TestSettingsApi:
         r = client.get("/api/settings")
         assert r.json() == {
             "city": "Paris",
-            "model": "gemma3:12b",
+            "model": "dolphin-mistral:7b",
             "ollama_url": "http://localhost:11434",
         }
         r = client.put("/api/settings", json={"city": "Lyon"})
         assert r.json()["city"] == "Lyon"
-        assert r.json()["model"] == "gemma3:12b"  # untouched fields keep defaults
+        assert r.json()["model"] == "dolphin-mistral:7b"  # untouched fields keep defaults
 
 
 class TestRecommendApi:

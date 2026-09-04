@@ -46,7 +46,7 @@ def extract_json(text: str) -> dict:
 
 
 class OllamaProvider:
-    def __init__(self, base_url: str, timeout: float = 120.0, client: httpx.Client | None = None):
+    def __init__(self, base_url: str, timeout: float = 300.0, client: httpx.Client | None = None):
         self._base_url = base_url.rstrip("/")
         self._client = client or httpx.Client(timeout=httpx.Timeout(timeout))
 

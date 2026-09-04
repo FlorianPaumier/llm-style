@@ -49,7 +49,7 @@ class TestExtractJson:
 class TestChoose:
     def test_valid_answer_passes(self):
         provider = ScriptedProvider([valid_reply()])
-        choice = stylist.choose(provider, "gemma3:12b", CANDIDATES, "chill", "casual")
+        choice = stylist.choose(provider, "dolphin-mistral:7b", CANDIDATES, "chill", "casual")
         assert choice.source == "llm"
         assert choice.title == "Chill navy day"
         assert set(choice.slot_picks) >= {"top", "bottom", "shoes"}
@@ -57,7 +57,7 @@ class TestChoose:
     def test_invalid_then_valid_retries_once(self):
         bad = json.dumps({"title": "x", "item_ids": {"top": 999999}})
         provider = ScriptedProvider([bad, valid_reply()])
-        choice = stylist.choose(provider, "gemma3:12b", CANDIDATES, "chill", "casual")
+        choice = stylist.choose(provider, "dolphin-mistral:7b", CANDIDATES, "chill", "casual")
         assert choice.source == "llm"
         assert len(provider.calls) == 2
         # The retry prompt must tell the model what was wrong.
@@ -67,14 +67,14 @@ class TestChoose:
         bad = json.dumps({"title": "x", "item_ids": {}})
         provider = ScriptedProvider([bad, bad])
         with pytest.raises(stylist.StylistError):
-            stylist.choose(provider, "gemma3:12b", CANDIDATES, "chill", "casual")
+            stylist.choose(provider, "dolphin-mistral:7b", CANDIDATES, "chill", "casual")
 
     def test_network_error_raises_immediately(self):
         import httpx
 
         provider = ScriptedProvider([httpx.ConnectError("ollama down")])
         with pytest.raises(stylist.StylistError):
-            stylist.choose(provider, "gemma3:12b", CANDIDATES, "chill", "casual")
+            stylist.choose(provider, "dolphin-mistral:7b", CANDIDATES, "chill", "casual")
 
     def test_empty_required_slots_skip_model_call(self):
         from app.services.candidates import CandidateSet
@@ -82,7 +82,7 @@ class TestChoose:
         empty = CandidateSet(slots={"top": CANDIDATES.slots["top"]}, temp_c=18.0)
         provider = ScriptedProvider([])
         with pytest.raises(stylist.StylistError):
-            stylist.choose(provider, "gemma3:12b", empty, "chill", "casual")
+            stylist.choose(provider, "dolphin-mistral:7b", empty, "chill", "casual")
         assert provider.calls == []  # never called the model
 
     def test_unknown_ids_rejected(self):
@@ -99,7 +99,7 @@ class TestChoose:
         )
         provider = ScriptedProvider([reply, reply])
         with pytest.raises(stylist.StylistError):
-            stylist.choose(provider, "gemma3:12b", CANDIDATES, "chill", "casual")
+            stylist.choose(provider, "dolphin-mistral:7b", CANDIDATES, "chill", "casual")
 
 
 class TestFallback:
