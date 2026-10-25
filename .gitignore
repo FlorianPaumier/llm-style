@@ -11,3 +11,26 @@ data/*.sqlite*
 
 # OS
 .DS_Store
+
+# .NET
+**/bin/
+**/obj/
+**/TestResults/
+.playwright-mcp/
+
+# User data: wardrobe DB, photos, drafts
+data/
+
+# Browser test artifacts
+**/test-results/
+**/playwright-report/
+
+# Local files excluded from publication
+.idea/
+.remember/
+.env
+.env.*
+!.env.example
+!.env.*.example
+.zcode/
+.superpowers/

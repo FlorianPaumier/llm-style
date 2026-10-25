@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b4552d">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="llm-style">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>llm-style — install on your phone</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1><em>llm</em>-style</h1>
+    <nav>
+      <a href="index.html">Ask</a>
+      <a href="wardrobe.html">Wardrobe</a>
+      <a href="settings.html">Settings</a>
+    </nav>
+  </header>
+
+  <main>
+    <div class="card">
+      <h2>Get it on your phone</h2>
+      <p>
+        llm-style is a web app that installs like a native one — no App Store,
+        no download queue. Your phone and this computer just need to be on
+        the same Wi-Fi.
+      </p>
+      <ol class="install-steps">
+        <li><strong>Scan the QR code</strong> below with your phone's camera.</li>
+        <li>The app opens in your mobile browser.</li>
+        <li>Tap <strong>Share → Add to Home Screen</strong> (iPhone) or the
+            browser menu → <strong>Install app</strong> (Android).</li>
+        <li>It now sits on your home screen and works like any app — including
+            your wardrobe photos.</li>
+      </ol>
+      <div class="qr-box">
+        <img id="qr" alt="QR code to open llm-style on your phone"
+             src="/api/app/qr.svg" width="220" height="220">
+        <p class="muted" id="lan-url"></p>
+      </div>
+      <p class="muted" id="install-note">
+        Once installed, the app remembers your machine's address. Keep the
+        backend running (<code>uvicorn app.main:app --host 0.0.0.0</code>)
+        so the phone can reach it.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>On this computer</h2>
+      <p>
+        You can install it here too: in Safari use
+        <strong>File → Add to Dock</strong>; in Chrome/Edge, the install
+        icon in the address bar.
+      </p>
+      <p class="actions">
+        <button id="install-btn" class="primary" hidden>Install on this device</button>
+        <span class="muted" id="install-status"></span>
+      </p>
+    </div>
+  </main>
+
+  <script src="install.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
+</body>
+</html>

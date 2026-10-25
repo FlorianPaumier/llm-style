@@ -1,0 +1,117 @@
+@page "/wardrobe"
+@inject IStyleApp App
+@implements IDisposable
+
+<PageTitle>Your wardrobe — llm-style</PageTitle>
+<div class="page-heading"><div><p class="eyebrow">LESS SEARCHING. MORE WEARING.</p><h1>Good things, <em>already yours.</em></h1><p>A home for the pieces you love, and the outfits still to come.</p></div><span class="folio">02 / YOUR WARDROBE</span></div>
+@if (error is not null) { <p class="message error" role="alert">@error</p> }
+@if (notice is not null) { <p class="message success" role="status">@notice</p> }
+<div class="wardrobe-toolbar"><fieldset class="person-picker"><legend class="sr-only">Whose wardrobe?</legend>@foreach(var person in people) { <label><input type="radio" name="wardrobe-person" checked="@(selectedPerson==person.Id)" @onchange="()=>SwitchPerson(person.Id)" disabled="@uploading" /><span class="avatar">@person.Name[..1]</span> @person.Name</label> }</fieldset><a class="button secondary" href="#add-item">Add a piece <span aria-hidden="true">+</span></a></div>
+<section class="upload-panel"><span class="upload-mark" aria-hidden="true">↥</span><div><h2>Your wardrobe, one photo at a time.</h2><p>Single pieces or a whole flat-lay. Review the model's drafts before saving.</p><span class="field-hint">JPG, PNG or WebP · up to 10 MB per photo</span><label class="inline-check"><input type="checkbox" @bind="quickAdd" disabled="@uploading" /> Save without review</label></div><div class="file-choice"><label for="photo-upload">@(uploading ? "Processing photos…" : "Choose photos")</label><InputFile id="photo-upload" OnChange="Upload" accept=".jpg,.jpeg,.png,.webp" multiple disabled="@uploading" /></div></section>
+@if(queue.Count>0)
+{
+    <section class="panel queue-panel"><div class="section-heading"><h2>Photo queue</h2><span aria-live="polite">@progress</span><button type="button" class="button secondary" @onclick="SaveAll" disabled="@(uploading || !queue.Any(r=>r.State=="Ready"))">Save all</button></div><p class="field-hint">Photos are processed one at a time. A flat-lay may produce several pieces.</p><ul class="queue-list">@foreach(var row in queue) { <li><div><strong>@(row.Draft?.Name ?? row.Filename)</strong><small>@row.Filename</small></div><span>@row.State</span>@if(row.State=="Ready") { <button type="button" class="button secondary" @onclick="()=>Review(row)">Review</button><button type="button" class="button secondary" @onclick="()=>SaveDraft(row)">Save</button> } @if(row.Error is not null) { <p class="error">@row.Error</p> }</li> }</ul></section>
+}
+<div class="collection-toolbar"><div><h2>The collection <span class="count">@collection.Total pieces</span></h2><span class="field-hint">Your clothes, with room for possibilities.</span></div><div class="filter-fields"><label class="sr-only" for="search">Search wardrobe</label><input id="search" type="search" maxlength="100" placeholder="Search your pieces…" value="@search" @oninput="Search" /><label class="sr-only" for="category-filter">Category</label><select id="category-filter" value="@type" @onchange="Filter"><option value="">All categories</option><option value="top">Tops</option><option value="bottom">Bottoms</option><option value="outerwear">Layers</option><option value="shoes">Shoes</option><option value="accessory">Accessories</option></select><label class="sr-only" for="sort-items">Sort wardrobe</label><select id="sort-items" value="@sort" @onchange="Sort"><option value="name">Name</option><option value="warmth">Warmth</option><option value="formality">Formality</option><option value="category">Category</option></select></div></div>
+@if(pendingDelete is not null) { <section class="message delete-confirm" role="alertdialog" aria-label="Delete piece"><p>Delete “@pendingDelete.Name” and its photo? This cannot be undone.</p><button class="button primary" @onclick="ConfirmDelete">Confirm delete</button><button class="button secondary" @onclick="()=>pendingDelete=null">Cancel</button></section> }
+@if(collection.Total==0) { <section class="empty-state"><h2>A little space for something good.</h2><p>@(string.IsNullOrEmpty(search) && string.IsNullOrEmpty(type) ? "Your wardrobe is empty. Add your first piece below, or start with a photo." : "No pieces match these filters. Try another search.")</p><a href="#add-item" class="button secondary">Add your first piece</a></section> }
+<div class="wardrobe-grid">@foreach(var item in collection.Items) { <ItemCard @key="item.Id" Item="item" OnEdit="Edit" OnDelete="AskDelete" /> }</div>
+@if(collection.Total>0) { <div class="pagination"><button class="button secondary" disabled="@(pageNumber<=1)" @onclick="Previous">← Previous</button><span>Page @pageNumber of @collection.Pages · @collection.Total pieces</span><button class="button secondary" disabled="@(pageNumber>=collection.Pages)" @onclick="Next">Next →</button></div> }
+<details class="panel add-item-panel" id="add-item" open="@(editingId is not null || reviewing is not null)"><summary>@(editingId is null ? "Add a piece by hand" : "Edit your piece") <span aria-hidden="true">+</span></summary>
+    <form @onsubmit="Save" @onsubmit:preventDefault="true"><div class="form-grid">
+        <div><label for="item-name">Name</label><input id="item-name" @bind="editor.Name" maxlength="100" required /></div>
+        <div><label for="item-category">Category</label><select id="item-category" @bind="editor.Category">@foreach(var category in GarmentCatalog.Categories.Keys.Order()) { <option value="@category">@category.Replace('_',' ')</option> }</select></div>
+        <div><label for="item-color">Color</label><input id="item-color" @bind="editor.Color" maxlength="50" /></div><div><label for="item-tags">Style tags</label><input id="item-tags" @bind="editor.StyleTags" maxlength="200" /></div>
+        <div><label for="warmth">Warmth</label><select id="warmth" @bind="editor.Warmth"><option value="1">1 · Very light</option><option value="2">2 · Light</option><option value="3">3 · Medium</option><option value="4">4 · Warm</option><option value="5">5 · Heavy</option></select></div>
+        <div><label for="formality">Formality</label><select id="formality" @bind="editor.Formality"><option value="1">1 · Active</option><option value="2">2 · Casual</option><option value="3">3 · Smart casual</option><option value="4">4 · Smart</option><option value="5">5 · Formal</option></select></div>
+        <div><label for="item-person">Whose wardrobe?</label><select id="item-person" @bind="editor.PersonaId">@foreach(var person in people) { <option value="@person.Id">@person.Name</option> }</select></div>
+        <div class="wide"><label for="item-notes">Notes</label><textarea id="item-notes" rows="2" @bind="editor.Notes" maxlength="500"></textarea></div>
+    </div>
+    @if(reviewPhoto is not null) { <img class="review-photo" src="@reviewPhoto" alt="Photo of the item being reviewed" /> }
+    @if(editingId is not null) { <label for="replace-photo">Replace photo without classification</label><InputFile id="replace-photo" OnChange="ReplacePhoto" accept=".jpg,.jpeg,.png,.webp" /><button type="button" class="button secondary" @onclick="RemovePhoto">Remove photo</button> }
+    <div class="settings-actions"><button type="submit" class="button primary" disabled="@saving">Save piece</button><button type="button" class="button secondary" @onclick="ResetEditor">Cancel</button></div></form>
+</details>
+
+@code {
+    private IReadOnlyList<Persona> people=[];
+    private int selectedPerson, pageNumber=1;
+    private string search="",type="",sort="name";
+    private ItemPage collection=new([],0,1,12,1);
+    private ItemInput editor=new() {Category="shirt",Warmth=2,Formality=2};
+    private int? editingId;
+    private ItemView? pendingDelete;
+    private string? error,notice,reviewPhoto;
+    private bool saving,uploading,quickAdd,disposed;
+    private CancellationToken cancellation;
+    private readonly CancellationTokenSource lifetime=new();
+    private readonly List<QueueRow> queue=[];
+    private QueueRow? reviewing;
+    private string progress="";
+    private sealed class QueueRow(string filename,DraftItem? draft=null,string? error=null)
+    { public string Filename=filename; public DraftItem? Draft=draft; public string State=error is null?"Ready":"Failed"; public string? Error=error; public int PersonaId; }
+    protected override void OnInitialized() { cancellation=lifetime.Token; people=App.ListPersonas(); selectedPerson=people[0].Id; editor.PersonaId=selectedPerson; Reload(); }
+    private void Reload() { try { collection=App.ListItems(new(pageNumber,12,selectedPerson,string.IsNullOrEmpty(type)?null:type,Q:search,Sort:sort)); } catch(ArgumentException e) { error=e.Message; } }
+    private void SwitchPerson(int id) { selectedPerson=id; pageNumber=1; ResetEditor(); Reload(); }
+    private void Search(ChangeEventArgs e) { var text=e.Value?.ToString()??""; search=text[..Math.Min(100,text.Length)]; pageNumber=1; Reload(); }
+    private void Filter(ChangeEventArgs e) { type=e.Value?.ToString()??""; pageNumber=1; Reload(); }
+    private void Sort(ChangeEventArgs e) { sort=e.Value?.ToString()??"name"; Reload(); }
+    private void Previous() { pageNumber--; Reload(); }
+    private void Next() { pageNumber++; Reload(); }
+    private void ResetEditor() { editor=new() {Category="shirt",Warmth=2,Formality=2,PersonaId=selectedPerson}; editingId=null; reviewing=null; reviewPhoto=null; }
+    private void Edit(ItemView item) { error=null; editor=item.ToInput(); editor.Type=null; editingId=item.Id; reviewing=null; reviewPhoto=null; }
+    private void Save()
+    {
+        if(saving) return; saving=true; error=null;
+        try { editor.Type=null; var saved=App.SaveItem(editor,editingId); if(reviewing is not null) reviewing.State="Saved"; notice=$"{saved.Name} saved."; ResetEditor(); Reload(); }
+        catch(Exception e) { error=e.Message; }
+        finally { saving=false; }
+    }
+    private void AskDelete(ItemView item) { pendingDelete=item; }
+    private void ConfirmDelete()
+    {
+        try { App.DeleteItem(pendingDelete!.Id); pendingDelete=null; if(editingId is not null) ResetEditor(); pageNumber=1; Reload(); notice="Piece deleted."; }
+        catch(Exception e) { error=e.Message; }
+    }
+    private void Review(QueueRow row) { if(row.State!="Ready") return; try { var photo=App.DraftPhoto(row.Draft!.PhotoToken).DataUrl; editingId=null; reviewing=row; editor=row.Draft.ToInput(row.PersonaId); reviewPhoto=photo; } catch(Exception e) { row.Error=e.Message; error=e.Message; } }
+    private void SaveDraft(QueueRow row)
+    {
+        if(row.State!="Ready") return;
+        try { App.SaveItem(row.Draft!.ToInput(row.PersonaId)); row.State="Saved"; row.Error=null; if(reviewing==row) ResetEditor(); Reload(); notice="Photo draft saved."; }
+        catch(Exception e) { row.Error=e.Message; error=e.Message; }
+    }
+    private void SaveAll() { foreach(var row in queue.Where(r=>r.State=="Ready").ToArray()) SaveDraft(row); }
+    private async Task<PhotoUpload> ReadFile(IBrowserFile file)
+    { await using var stream=file.OpenReadStream(10*1024*1024,cancellation); using var memory=new MemoryStream(); await stream.CopyToAsync(memory,cancellation); return new(file.Name,memory.ToArray()); }
+    private async Task Upload(InputFileChangeEventArgs args)
+    {
+        if(uploading) return; uploading=true; error=null; var target=selectedPerson; var saveDirectly=quickAdd;
+        var files=args.GetMultipleFiles(int.MaxValue);
+        try
+        {
+            for(var index=0;index<files.Count;index++)
+            {
+                cancellation.ThrowIfCancellationRequested(); var file=files[index]; progress=$"Photo {index+1} of {files.Count}"; if(!disposed) await InvokeAsync(StateHasChanged);
+                try
+                {
+                    var upload=await ReadFile(file);
+                    if(saveDirectly) { var items=await App.QuickAddAsync(upload,target,cancellation); foreach(var item in items) queue.Add(new(file.Name) {State="Saved",PersonaId=target}); notice=$"{items.Count} piece(s) saved from {file.Name}."; Reload(); }
+                    else foreach(var draft in await App.ClassifyAsync(upload,cancellation)) queue.Add(new(file.Name,draft) {PersonaId=target});
+                }
+                catch(OperationCanceledException) when(cancellation.IsCancellationRequested) { return; }
+                catch(Exception e) { queue.Add(new(file.Name,error:e.Message) {PersonaId=target}); }
+                if(!disposed) await InvokeAsync(StateHasChanged);
+            }
+            progress=$"{files.Count} photos processed";
+        }
+        catch(OperationCanceledException) when(cancellation.IsCancellationRequested) { }
+        finally { uploading=false; }
+    }
+    private async Task ReplacePhoto(InputFileChangeEventArgs args)
+    {
+        error=null;
+        try { var target=editingId!.Value; var upload=await ReadFile(args.File); cancellation.ThrowIfCancellationRequested(); App.UploadPhoto(target,upload); if(!disposed) { Reload(); notice="Photo replaced."; } }
+        catch(Exception e) { error=e.Message; }
+    }
+    private void RemovePhoto() { try { App.RemovePhoto(editingId!.Value); Reload(); notice="Photo removed."; } catch(Exception e) { error=e.Message; } }
+    public void Dispose() { disposed=true; lifetime.Cancel(); lifetime.Dispose(); }
+}

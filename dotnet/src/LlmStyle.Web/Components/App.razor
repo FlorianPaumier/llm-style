@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="/" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="theme-color" content="#a64e31" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="_content/LlmStyle.UI/app.css" />
+    <link rel="stylesheet" href="LlmStyle.Web.styles.css" />
+    <ImportMap />
+    <HeadOutlet @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+</head>
+
+<body>
+    <Routes @rendermode="new InteractiveServerRenderMode(prerender: false)" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="pwa.js"></script>
+</body>
+
+</html>

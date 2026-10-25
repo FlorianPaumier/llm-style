@@ -1,0 +1,64 @@
+@page "/"
+@inject IStyleApp App
+@implements IDisposable
+
+<PageTitle>Ask your stylist — llm-style</PageTitle>
+<div class="page-heading"><div><p class="eyebrow">A LITTLE INSPIRATION, EVERY DAY</p><h1>What feels like <em>you</em> today?</h1><p>Start with a mood. Find your outfit in the clothes you already love.</p></div><span class="folio">01 / YOUR STYLIST</span></div>
+@if(error is not null) { <p class="message error" role="alert">@error</p> }
+@if(notice is not null) { <p class="message success" role="status">@notice</p> }
+<div class="ask-grid"><section class="panel stylist-form" aria-labelledby="mood-heading"><div class="section-heading"><h2 id="mood-heading">Let's get you dressed.</h2><span class="step-label">THE STARTING POINT</span></div>
+    <form @onsubmit="Recommend" @onsubmit:preventDefault="true"><fieldset class="person-picker"><legend>Who's getting dressed?</legend>@foreach(var person in people) { <label><input type="checkbox" checked="@selected.Contains(person.Id)" @onchange="()=>Toggle(person.Id)" disabled="@busy" /><span class="avatar">@(string.IsNullOrEmpty(person.Name)?"?":person.Name[..1])</span> @person.Name <span class="checkmark">✓</span></label> }</fieldset>
+    <label for="mood">How are you feeling?</label><textarea id="mood" rows="3" @bind="request.Mood" placeholder="A little creative, a little laid-back…" maxlength="500" required></textarea><p class="field-hint">A feeling, a color, a whole mood. There's no wrong answer.</p>
+    <fieldset class="occasion-picker"><legend>What's the occasion?</legend><div class="segmented">@foreach(var occasion in occasions) { <label><input type="radio" name="occasion" checked="@(request.Occasion==occasion.Key)" @onchange="()=>request.Occasion=occasion.Key" disabled="@busy" /><span>@occasion.Value</span></label> }</div></fieldset>
+    <div class="form-grid"><div><label for="activity">Anything on the agenda? <span class="optional">Optional</span></label><input id="activity" @bind="request.Activity" placeholder="Coffee, a walk, a gallery…" maxlength="200" /></div><div><label for="options">A little choice</label><select id="options" @bind="request.Count"><option value="1">1 outfit option</option><option value="3">3 outfit options</option><option value="5">5 outfit options</option></select></div></div>
+    <button class="button primary full-width" type="submit" disabled="@busy">@(busy?"Finding your outfit…":"Find my outfit") <span aria-hidden="true">↗</span></button><p class="quiet-note" aria-live="polite">@(busy?"Your local stylist is thinking. The first model call may take a little longer.":"From your own wardrobe. A safe pick is available if the model isn't.")</p></form>
+</section><aside class="inspiration-column"><section class="weather-panel"><div class="weather-top"><span class="eyebrow">DRESS FOR THE DAY</span><span>@city</span></div>
+    @{var displayed=result?.Weather ?? currentWeather;}
+    @if(displayed is not null) { <div class="weather-main"><span class="sun" aria-hidden="true">◌</span><strong>@displayed.TemperatureC.ToString("0")<span>°</span></strong><div>@displayed.City<small>Feels like @displayed.ApparentTemperatureC.ToString("0")°</small></div></div><div class="weather-details"><span>Rain <strong>@displayed.PrecipitationMm mm</strong></span><span>Wind <strong>@displayed.WindSpeedKmh km/h</strong></span></div> }
+    else { <p class="weather-placeholder">@(loadingWeather?"Checking the weather…":"Live weather isn't available yet.")</p> }
+    @if(weatherError is not null) { <p class="field-hint">@weatherError</p> }
+    <details><summary>Set the temperature yourself</summary><label for="temperature">Temperature in °C</label><input id="temperature" type="number" @bind="request.WeatherOverrideC" min="-60" max="60" step="0.1" placeholder="Leave blank for live weather" /></details><button type="button" class="text-button" @onclick="RefreshWeather" disabled="@loadingWeather">Refresh weather</button>
+</section><section class="editorial-note"><span class="eyebrow">THE EVERYDAY EDIT</span><blockquote>“The best outfit is the one you feel yourself in.”</blockquote><div class="little-rule"></div><p>Your mood leads. Your wardrobe follows.</p></section></aside></div>
+@if(result is not null)
+{
+    @foreach(var outfit in result.Outfits)
+    {
+        <section class="outfit-section" @key="outfit.HistoryId"><div class="section-heading"><div><p class="eyebrow">@outfit.PersonaName · OPTION @outfit.Option · @outfit.Source</p><h2>@outfit.Title</h2></div><span class="tag">@(outfit.Source=="fallback"?"SAFE PICK":"YOUR STYLIST")</span></div>
+        <div class="outfit-grid">@foreach(var piece in outfit.Outfit) { <OutfitPiece Item="piece.Item" /> }</div><div class="outfit-caption"><p>@outfit.Rationale</p>@if(outfit.Outfit.Count>0 && outfit.HistoryId is {} historyId) { <button class="button secondary" disabled="@worn.Contains(historyId)" @onclick="()=>MarkWorn(historyId)">@(worn.Contains(historyId)?"Worn today ✓":"Wear this today")</button> }</div>
+        @if(outfit.Gaps.Count>0) { <ul class="gap-list">@foreach(var gap in outfit.Gaps) { <li>@gap</li> }</ul> }
+        </section>
+    }
+    <ul class="gap-list">@foreach(var gap in result.Gaps.Except(result.Outfits.SelectMany(o=>o.Gaps))) { <li>@gap</li> }</ul>
+}
+else { <section class="outfit-section empty-state"><p class="eyebrow">YOUR NEXT FAVORITE OUTFIT</p><h2>It starts with what you already own.</h2><p>Add a few pieces to your wardrobe, then tell us how you feel.</p><a class="button secondary" href="/wardrobe">Explore your wardrobe ↗</a></section> }
+
+@code {
+    private readonly Dictionary<string,string> occasions=new() { ["casual"]="Everyday",["work"]="Work",["smart"]="Going out",["formal"]="Formal",["gym"]="Active" };
+    private IReadOnlyList<Persona> people=[]; private readonly HashSet<int> selected=[]; private readonly HashSet<int> worn=[];
+    private RecommendInput request=new() {Count=3}; private Recommendation? result;
+    private Weather? currentWeather; private string city=""; private string? error,notice,weatherError;
+    private bool busy,loadingWeather,disposed; private readonly CancellationTokenSource lifetime=new();
+    protected override void OnInitialized() { people=App.ListPersonas(); selected.Add(people[0].Id); city=App.GetSettings().City; }
+    protected override async Task OnAfterRenderAsync(bool firstRender) { if(firstRender) await RefreshWeather(); }
+    private void Toggle(int id) { if(!selected.Add(id)) selected.Remove(id); }
+    private async Task RefreshWeather()
+    {
+        if(loadingWeather) return; loadingWeather=true; weatherError=null;
+        try { currentWeather=await App.WeatherAsync(lifetime.Token); }
+        catch(OperationCanceledException) when(lifetime.IsCancellationRequested) { }
+        catch(Exception e) { weatherError=e.Message; }
+        finally { loadingWeather=false; if(!disposed) await InvokeAsync(StateHasChanged); }
+    }
+    private async Task Recommend()
+    {
+        if(busy) return; error=null; notice=null;
+        if(selected.Count==0) { error="Choose at least one person."; return; }
+        busy=true;
+        try { request.PersonaIds=selected.ToList(); result=await App.RecommendAsync(request,lifetime.Token); }
+        catch(OperationCanceledException) when(lifetime.IsCancellationRequested) { }
+        catch(Exception e) { error=e.Message; }
+        finally { busy=false; }
+    }
+    private void MarkWorn(int id) { try { App.MarkWorn(id); worn.Add(id); notice="Outfit marked worn. Your wear counts are updated."; } catch(Exception e) { error=e.Message; } }
+    public void Dispose() { disposed=true; lifetime.Cancel(); lifetime.Dispose(); }
+}

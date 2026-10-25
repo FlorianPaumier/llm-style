@@ -1,0 +1,15 @@
+{
+  "name": "llm-style-e2e",
+  "private": true,
+  "description": "Playwright end-to-end browser tests for llm-style (isolated backend, never touches real data/)",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "report": "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^26.4.1",
+    "typescript": "^5.7.0"
+  }
+}

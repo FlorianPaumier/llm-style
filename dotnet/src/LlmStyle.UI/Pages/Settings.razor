@@ -1,0 +1,33 @@
+@page "/settings"
+@inject IStyleApp App
+
+<PageTitle>Settings — llm-style</PageTitle>
+<div class="page-heading"><div><p class="eyebrow">MAKE YOURSELF AT HOME</p><h1>The little <em>details.</em></h1><p>Your people, your preferences, your own way of getting dressed.</p></div><span class="folio">03 / SETTINGS</span></div>
+@if(error is not null) { <p class="message error" role="alert">@error</p> }
+@if(notice is not null) { <p class="message success" role="status">@notice</p> }
+<div class="settings-grid"><div class="settings-main">
+    <EditForm Model="settings" OnSubmit="SavePreferences" FormName="preferences"><section class="panel"><div class="section-heading"><div><span class="eyebrow">01 / THE EVERYDAY</span><h2>A sense of place.</h2></div></div><p class="section-description">So your outfits feel right for the weather outside your door.</p><label for="city">Your city</label><input id="city" @bind="settings.City" maxlength="100" /><p class="field-hint">Weather is shared across everyone in your space.</p></section>
+    <section class="panel"><div class="section-heading"><div><span class="eyebrow">02 / BEHIND THE SCENES</span><h2>Your local stylist.</h2></div></div><p class="section-description">Your wardrobe stays with you. Choose the local models that lend a hand.</p><label for="ollama">Ollama address</label><input id="ollama" type="url" @bind="settings.OllamaUrl" maxlength="300" /><div class="form-grid"><div><label for="stylist-model">Stylist model</label><input id="stylist-model" @bind="settings.Model" maxlength="100" /></div><div><label for="vision-model">Photo model</label><input id="vision-model" @bind="settings.VisionModel" maxlength="100" /></div></div><div class="settings-actions"><span class="field-hint">Saved locally. Empty fields reset to defaults.</span><button class="button primary" type="submit">Save preferences <span aria-hidden="true">↗</span></button></div></section></EditForm>
+    <section class="panel"><div class="section-heading"><div><span class="eyebrow">03 / YOUR PEOPLE</span><h2>Personal style is personal.</h2></div><span class="tag">@people.Count PEOPLE</span></div><p class="section-description">A wardrobe for each of you. A little coordination when you want it.</p>
+    @foreach(var person in people)
+    {
+        <div class="person-setting" @key="person.Id"><span class="avatar">@(string.IsNullOrEmpty(person.Name)?"?":person.Name[..1])</span><div class="person-fields"><label for="person-name-@person.Id">Name for @person.OriginalName</label><input id="person-name-@person.Id" @bind="person.Name" maxlength="50" /><label for="person-notes-@person.Id">Styling notes for @person.OriginalName</label><textarea id="person-notes-@person.Id" rows="2" @bind="person.Description" maxlength="500"></textarea><label for="person-gender-@person.Id">Styling profile for @person.OriginalName</label><select id="person-gender-@person.Id" @bind="person.Gender"><option value="unspecified">Unspecified</option><option value="male">Male</option><option value="female">Female</option></select><div class="settings-actions"><button class="button secondary" @onclick="()=>SavePerson(person)">Save @person.OriginalName</button><button class="text-button" @onclick="()=>deleting=person.Id" disabled="@(people.Count==1)">Delete @person.OriginalName</button></div>
+        @if(deleting==person.Id) { <div class="message"><p>Delete @person.OriginalName? Move or delete their clothes first.</p><button class="button primary" @onclick="()=>DeletePerson(person.Id)">Confirm delete person</button><button class="button secondary" @onclick="()=>deleting=null">Cancel</button></div> }</div></div>
+    }
+    <div class="new-person"><label for="new-person">New person name</label><input id="new-person" @bind="newName" maxlength="50" placeholder="Someone with their own style" /><button class="button secondary" @onclick="AddPerson">Add a person <span aria-hidden="true">+</span></button></div></section>
+</div><aside class="settings-aside"><div class="editorial-note"><span class="eyebrow">A SPACE OF YOUR OWN</span><blockquote>Your clothes.<br />Your choices.<br /><em>Your kind of style.</em></blockquote><div class="little-rule"></div><p>More personal, less complicated.<br />That's the idea.</p></div><div class="privacy-note"><span aria-hidden="true">⌂</span><h3>At home on your device.</h3><p>Your wardrobe and styling history stay local. No account needed.</p></div></aside></div>
+
+@code {
+    private sealed class Preferences { public string City {get;set;}=""; public string Model {get;set;}=""; public string OllamaUrl {get;set;}=""; public string VisionModel {get;set;}=""; }
+    private sealed class PersonEditor(Persona person) { public int Id=person.Id; public string OriginalName=person.Name; public string Name {get;set;}=person.Name; public string? Description {get;set;}=person.Description; public string Gender {get;set;}=person.Gender; }
+    private Preferences settings=new(); private List<PersonEditor> people=[];
+    private string newName=""; private string? error,notice; private int? deleting;
+    protected override void OnInitialized() { LoadSettings(); LoadPeople(); }
+    private void LoadSettings() { var s=App.GetSettings(); settings=new() {City=s.City,Model=s.Model,OllamaUrl=s.OllamaUrl,VisionModel=s.VisionModel}; }
+    private void LoadPeople() { people=App.ListPersonas().Select(p=>new PersonEditor(p)).ToList(); }
+    private void Run(Action action,string message) { error=null; notice=null; try { action(); notice=message; } catch(Exception e) { error=e.Message; } }
+    private void SavePreferences()=>Run(()=>{App.UpdateSettings(new Dictionary<string,string?> { ["city"]=settings.City,["model"]=settings.Model,["ollama_url"]=settings.OllamaUrl,["vision_model"]=settings.VisionModel }); LoadSettings();},"Preferences saved.");
+    private void SavePerson(PersonEditor p)=>Run(()=>{App.SavePersona(new() {Name=p.Name,Description=p.Description,Gender=p.Gender},p.Id); LoadPeople();},"Person saved.");
+    private void AddPerson()=>Run(()=>{App.SavePersona(new() {Name=newName}); newName=""; LoadPeople();},"Person added.");
+    private void DeletePerson(int id)=>Run(()=>{App.DeletePersona(id); deleting=null; LoadPeople();},"Person deleted.");
+}

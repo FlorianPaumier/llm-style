@@ -1,0 +1,12 @@
+<article class="garment-card">
+    <div class="garment-image @Tone"><img src="_content/LlmStyle.UI/garments/@(Asset).svg" alt="@Color @Name" /><span class="garment-index" aria-hidden="true">↗</span></div>
+    <div class="garment-info"><p class="eyebrow">@Category</p><h3>@Name</h3><p>@Color</p></div>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public string Name { get; set; } = "";
+    [Parameter, EditorRequired] public string Category { get; set; } = "";
+    [Parameter, EditorRequired] public string Color { get; set; } = "";
+    [Parameter, EditorRequired] public string Asset { get; set; } = "";
+    [Parameter] public string Tone { get; set; } = "sand";
+}

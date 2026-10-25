@@ -1,0 +1,13 @@
+@inject IStyleApp App
+<article class="garment-card">
+    <div class="garment-image sand">@if(photo is not null) { <img src="@photo" alt="@Item.Name" /> } else { <div class="no-photo"><span aria-hidden="true">◇</span><span>@Item.Category.Replace('_',' ')</span><small>No photo yet</small></div> }</div>
+    <div class="garment-info"><p class="eyebrow">@Item.Type · @Item.Category.Replace('_',' ')</p><h3>@Item.Name</h3><p>@Item.Color · Warmth @Item.Warmth · Formality @Item.Formality</p><p>Worn @Item.TimesWorn time(s)</p></div>
+    <div class="item-actions"><button class="text-button" aria-label="Edit @Item.Name" @onclick="()=>OnEdit.InvokeAsync(Item)">Edit</button><button class="text-button" aria-label="Delete @Item.Name" @onclick="()=>OnDelete.InvokeAsync(Item)">Delete</button></div>
+</article>
+@code {
+    [Parameter,EditorRequired] public ItemView Item {get;set;}=null!;
+    [Parameter] public EventCallback<ItemView> OnEdit {get;set;}
+    [Parameter] public EventCallback<ItemView> OnDelete {get;set;}
+    private string? photo;
+    protected override void OnParametersSet() { photo=null; if(Item.HasPhoto) { try { photo=App.ItemPhoto(Item.Id).DataUrl; } catch(StyleException) { } } }
+}

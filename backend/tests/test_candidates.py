@@ -98,3 +98,102 @@ def test_seed_reproducibility_same_day_same_candidates():
 def test_occasion_unknown_falls_back_to_casual_band():
     cs = select(full_wardrobe(), temp_c=18.0, occasion="beach", rng_seed=SEED)
     assert cs.has_required
+
+
+def test_accessory_pool_relaxes_with_note_when_band_empty():
+    # Hot day (band 1-1) but the only accessory is a warmth-4 beanie: it is
+    # still offered (relaxed in), with a gap note flagging the stretch.
+    items = [
+        make_item(1, "top", 1, 2),
+        make_item(2, "bottom", 1, 2),
+        make_item(3, "shoes", 1, 2),
+        make_item(4, "accessory", 4, 2, name="wool beanie"),
+    ]
+    cs = select(items, temp_c=30.0, occasion="casual", rng_seed=SEED)
+    assert [it["id"] for it in cs.slots["accessory"]] == [4]
+    assert any(
+        "no accessory in the ideal warmth band" in g and "relaxed" in g
+        for g in cs.gaps
+    )
+
+
+def test_accessory_pool_stays_in_band_when_band_matches():
+    # Cold day (band 4-5) with a warmth-2 watch and a warmth-4 beanie:
+    # only the band-matching beanie is offered, and no relaxation note.
+    items = [
+        make_item(1, "top", 4, 2),
+        make_item(2, "bottom", 4, 2),
+        make_item(3, "shoes", 4, 2),
+        make_item(4, "accessory", 2, 2, name="watch"),
+        make_item(5, "accessory", 4, 2, name="wool beanie"),
+    ]
+    cs = select(items, temp_c=5.0, occasion="casual", rng_seed=SEED)
+    assert [it["id"] for it in cs.slots["accessory"]] == [5]
+    assert not any("accessory" in g and "relaxed" in g for g in cs.gaps)
+
+
+def test_activity_offers_layer_outside_the_warmth_band():
+    # 18°C (band 1-2) with a warmth-3 cardigan: without an activity the
+    # cardigan is out of band and not offered; with one ("Christmas
+    # dinner") it must appear in the top pool as the warm-layer option.
+    items = [
+        make_item(1, "top", 2, 2, category="t_shirt"),
+        make_item(2, "top", 3, 2, category="cardigan"),
+        make_item(3, "bottom", 2, 2, category="jeans"),
+        make_item(4, "shoes", 2, 2, category="sneakers"),
+    ]
+    plain = select(items, temp_c=18.0, occasion="casual", rng_seed=SEED)
+    assert not plain.layer_upper
+
+    with_activity = select(
+        items, temp_c=18.0, occasion="casual", rng_seed=SEED,
+        activity="Christmas dinner",
+    )
+    assert [it["id"] for it in with_activity.layer_upper] == [2]
+    # The primary top is untouched — the layer joins the pool.
+    assert any(it["id"] == 1 for it in with_activity.primary_upper)
+
+
+def test_activity_layer_respects_formality_band():
+    # Formal occasion (band 4-5): the casual cardigan (formality 2) stays
+    # out of the pool even with an activity stated.
+    items = [
+        make_item(1, "top", 4, 5, category="shirt"),
+        make_item(2, "top", 3, 2, category="cardigan"),
+        make_item(3, "bottom", 4, 5, category="trousers"),
+        make_item(4, "shoes", 4, 5, category="derbies"),
+    ]
+    cs = select(
+        items, temp_c=5.0, occasion="formal", rng_seed=SEED,
+        activity="Christmas dinner",
+    )
+    assert not cs.layer_upper
+
+
+def test_activity_layer_prefers_warmth_closest_to_the_day():
+    # 18°C (band 1-2): two cardigans, both out of band (warmth 3 and 4).
+    # The supplementary pool offers the cooler one first.
+    items = [
+        make_item(1, "top", 2, 2, category="t_shirt"),
+        make_item(2, "top", 4, 2, category="cardigan", name="wool cardigan"),
+        make_item(3, "top", 3, 2, category="cardigan", name="light cardigan"),
+        make_item(4, "bottom", 2, 2, category="jeans"),
+        make_item(5, "shoes", 2, 2, category="sneakers"),
+    ]
+    cs = select(
+        items, temp_c=18.0, occasion="casual", rng_seed=SEED,
+        activity="family dinner",
+    )
+    assert [it["id"] for it in cs.layer_upper] == [3, 2]
+
+
+def test_no_activity_keeps_band_behavior():
+    items = [
+        make_item(1, "top", 2, 2, category="t_shirt"),
+        make_item(2, "top", 3, 2, category="cardigan"),
+        make_item(3, "bottom", 2, 2, category="jeans"),
+        make_item(4, "shoes", 2, 2, category="sneakers"),
+    ]
+    cs = select(items, temp_c=18.0, occasion="casual", rng_seed=SEED, activity=None)
+    assert not cs.layer_upper
+    assert not any("layer" in g for g in cs.gaps)

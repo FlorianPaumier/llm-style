@@ -1,0 +1,19 @@
+@page "/install"
+@inject IInstallationInfo Installation
+@inject NavigationManager Navigation
+
+<PageTitle>Get the app — llm-style</PageTitle>
+<div class="page-heading"><div><p class="eyebrow">A LITTLE CLOSER TO YOUR EVERYDAY</p><h1>Make yourself <em>at home.</em></h1><p>Your personal stylist, with a place of its own.</p></div><span class="folio">04 / THE APP</span></div>
+@if(info.IsDesktop)
+{
+    <section class="panel"><h2>You're already at home.</h2><p>Your desktop app stores this wardrobe locally. Keep Ollama running for the full stylist and photo experience. The web host is separate if you want to connect your phone.</p></section>
+}
+else
+{
+    <section class="panel install-panel"><div><span class="eyebrow">YOUR PHONE, THE SAME WARDROBE</span><h2>A little closer to the everyday.</h2><p>On the same trusted Wi-Fi network, scan this code or open the address below. The web host must be reachable from your phone.</p><a class="install-url" href="@info.PrimaryUrl">@info.PrimaryUrl</a><ol><li>Open the address in Safari or Chrome.</li><li>Choose “Add to Home Screen” or “Install app” from the browser menu.</li><li>Keep the web host running for live wardrobe and styling access.</li></ol><p class="field-hint">Full installation requires HTTPS (or localhost on this device). Ordinary LAN HTTP may only support opening the website.</p></div><img src="/api/app/qr.svg" alt="QR code for the local wardrobe web address" width="200" height="200" /></section>
+}
+<div class="download-grid"><section class="panel"><span class="download-symbol" aria-hidden="true">⌘</span><span class="eyebrow">MADE FOR MAC</span><h2>A natural fit.</h2><p>The shared UI and services target Apple Silicon through Mac Catalyst. A signed installer isn't available yet.</p><button class="button secondary" disabled>Mac installer not published</button></section><section class="panel"><span class="download-symbol" aria-hidden="true">⊞</span><span class="eyebrow">AT HOME ON WINDOWS</span><h2>Your daily companion.</h2><p>The Windows host uses the same UI and application logic. A signed installer isn't available yet.</p><button class="button secondary" disabled>Windows installer not published</button></section></div>
+@code {
+    private InstallationInfo info=new(false,"",[],null);
+    protected override void OnInitialized()=>info=Installation.Get(Navigation.BaseUri);
+}

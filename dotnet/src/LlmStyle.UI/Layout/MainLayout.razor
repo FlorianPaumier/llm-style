@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+
+<a class="skip-link" href="#main">Skip to content</a>
+<div class="app-shell">
+    <aside class="sidebar">
+        <a href="/" class="wordmark" aria-label="llm-style home"><em>llm</em>-style<span>YOUR EVERYDAY STYLIST</span></a>
+        <div class="nav-label">YOUR SPACE</div>
+        <nav class="primary-nav" aria-label="Main navigation">
+            <NavLink href="/" Match="NavLinkMatch.All"><span aria-hidden="true">✳</span> Ask your stylist</NavLink>
+            <NavLink href="/wardrobe"><span aria-hidden="true">▦</span> Your wardrobe</NavLink>
+            <NavLink href="/settings"><span aria-hidden="true">⚙</span> Settings</NavLink>
+        </nav>
+        <div class="sidebar-note"><span class="small-star" aria-hidden="true">✳</span><p>Good style starts with<br />what you already own.</p><span>A little less searching.<br />A little more you.</span></div>
+        <div class="sidebar-bottom"><NavLink href="/install">Get the app <span aria-hidden="true">↗</span></NavLink><div class="profile"><span class="avatar">F</span><div>My personal space<small>Made for the everyday</small></div></div></div>
+    </aside>
+    <div class="workspace">
+        <header class="topbar"><span>Make room for a good day.</span><span class="preview-badge">Local wardrobe · private by design</span></header>
+        <main id="main" tabindex="-1">@Body</main>
+        <footer class="page-footer"><span>A wardrobe that feels like you.</span><a href="/install">Get the app ↗</a></footer>
+    </div>
+</div>
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>

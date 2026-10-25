@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/LlmStyle.Application/LlmStyle.Application.csproj" />
+    <Project Path="src/LlmStyle.Desktop/LlmStyle.Desktop.csproj" />
+    <Project Path="src/LlmStyle.Domain/LlmStyle.Domain.csproj" />
+    <Project Path="src/LlmStyle.Infrastructure/LlmStyle.Infrastructure.csproj" />
+    <Project Path="src/LlmStyle.UI/LlmStyle.UI.csproj" />
+    <Project Path="src/LlmStyle.Web/LlmStyle.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/LlmStyle.Domain.Tests/LlmStyle.Domain.Tests.csproj" />
+    <Project Path="tests/LlmStyle.Infrastructure.Tests/LlmStyle.Infrastructure.Tests.csproj" />
+    <Project Path="tests/LlmStyle.Web.Tests/LlmStyle.Web.Tests.csproj" />
+  </Folder>
+</Solution>

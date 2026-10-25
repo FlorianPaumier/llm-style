@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b4552d">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="llm-style">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>llm-style — wardrobe</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,6 +20,7 @@
       <a href="index.html">Ask</a>
       <a href="wardrobe.html" class="active">Wardrobe</a>
       <a href="settings.html">Settings</a>
+      <a href="install.html" class="install-link">Get the app</a>
     </nav>
   </header>
 
@@ -28,17 +36,33 @@
             <div class="photo-drop" id="photo-drop">
               <img id="photo-preview" alt="" hidden>
               <span id="photo-hint">Drop a photo here, or click to choose</span>
-              <input type="file" id="photo-input" accept=".jpg,.jpeg,.png,.webp" hidden>
+              <input type="file" id="photo-input" accept=".jpg,.jpeg,.png,.webp" multiple hidden>
             </div>
             <div class="actions">
               <button type="button" class="primary" id="classify-btn" disabled>Describe from photo</button>
               <button type="button" id="photo-remove" hidden>Remove photo</button>
               <span class="muted" id="classify-status"></span>
             </div>
+            <div class="actions quick-add-row">
+              <label class="quick-add-label">
+                <input type="checkbox" id="quick-add-mode">
+                Save without review — the AI draft is saved as the item, no form
+              </label>
+              <button type="button" class="primary" id="quick-add-btn" hidden>Quick add</button>
+              <span class="muted" id="quick-add-status"></span>
+            </div>
+          </div>
+          <div class="wide">
+            <label>Whose wardrobe?</label>
+            <div id="form-persona-picker" class="persona-chips"></div>
           </div>
           <div>
             <label for="name">Name</label>
             <input id="name" required maxlength="100" placeholder="Navy linen shirt">
+          </div>
+          <div>
+            <label for="category">Category</label>
+            <select id="category"></select>
           </div>
           <div>
             <label for="type">Type</label>
@@ -91,9 +115,23 @@
       </form>
     </div>
 
+    <div class="card" id="bulk-queue" hidden>
+      <div class="actions" style="margin-bottom: 0.8rem;">
+        <h2 style="margin: 0;">Photo queue</h2>
+        <span class="muted" id="bulk-summary"></span>
+        <div class="spacer"></div>
+        <button type="button" class="primary" id="bulk-save-all" hidden>Save all</button>
+        <button type="button" id="bulk-clear">Clear</button>
+      </div>
+      <ul id="bulk-rows" class="bulk-rows"></ul>
+      <p class="muted" id="bulk-hint">Each photo is classified one at a time — a photo with several items yields one draft per item. Review drafts one by one, or Save all.</p>
+    </div>
+
     <div class="card">
-      <div class="actions" style="margin-bottom: 1rem;">
-        <h2 style="margin: 0;">Your wardrobe (<span id="count">0</span>)</h2>
+      <div class="actions" style="margin-bottom: 1rem; row-gap: 0.6rem;">
+        <h2 style="margin: 0;">Wardrobe</h2>
+        <div id="wardrobe-persona-picker" class="persona-chips"></div>
+        <span class="muted">(<span id="count">0</span>)</span>
         <div class="spacer"></div>
         <select id="filter-type" style="width: auto;">
           <option value="">all types</option>
@@ -109,6 +147,7 @@
           <tr>
             <th></th>
             <th class="sortable" data-key="name" data-label="Name">Name</th>
+            <th class="sortable" data-key="category" data-label="Category">Category</th>
             <th class="sortable" data-key="type" data-label="Type">Type</th>
             <th class="sortable" data-key="color" data-label="Color">Color</th>
             <th class="sortable" data-key="warmth" data-label="Warmth">Warmth</th>
@@ -130,6 +169,13 @@
     </div>
   </main>
 
+  <script src="persona.js"></script>
+  <script src="categories.js"></script>
   <script src="wardrobe.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
 </body>
 </html>

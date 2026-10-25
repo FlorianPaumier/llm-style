@@ -1,0 +1,7 @@
+@inject IStyleApp App
+<article class="garment-card"><div class="garment-image sand">@if(photo is not null) { <img src="@photo" alt="@Item.Name" /> } else { <div class="no-photo"><span aria-hidden="true">◇</span><span>@Item.Category.Replace('_',' ')</span></div> }</div><div class="garment-info"><p class="eyebrow">@Item.Type · @Item.Category.Replace('_',' ')</p><h3>@Item.Name</h3><p>@Item.Color</p></div></article>
+@code {
+    [Parameter,EditorRequired] public ItemView Item {get;set;}=null!;
+    private string? photo;
+    protected override void OnParametersSet() { photo=null; if(Item.HasPhoto) { try { photo=App.ItemPhoto(Item.Id).DataUrl; } catch(StyleException) { } } }
+}

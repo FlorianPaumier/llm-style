@@ -19,11 +19,12 @@ def seed_wardrobe(conn):
 def make_service(conn, provider, temp_c=18.0, weather_fail=False):
     seed_wardrobe(conn)
     svc = RecommendationService()
-    svc._provider = lambda url: provider  # inject the fake
+    svc.provider_for = lambda url: provider  # inject the fake
     return svc, FakeWeatherService(temp_c=temp_c, fail=weather_fail)
 
 
-def recommend(conn, svc, weather, mood="chill today", occasion="casual", override=None):
+def recommend(conn, svc, weather, mood="chill today", occasion="casual", override=None,
+              activity=None, rng_seed=None):
     from app.config import AppConfig
 
     cfg = AppConfig(db_path="unused")
@@ -36,7 +37,9 @@ def recommend(conn, svc, weather, mood="chill today", occasion="casual", overrid
         weather_service=weather,
         mood=mood,
         occasion=occasion,
+        activity=activity,
         weather_override_c=override,
+        rng_seed=rng_seed,
     )
 
 
@@ -98,6 +101,24 @@ class TestDegradation:
         assert resp.outfit, "fallback must still produce an outfit"
         assert any("safe" in g.lower() or "unavailable" in g.lower() for g in resp.gaps)
 
+    def test_cold_day_fallback_includes_warm_accessory(self, conn):
+        # Model down on a cold day: the deterministic fallback must still
+        # dress the accessory slot with a warmth-band-matching piece.
+        import httpx
+
+        provider = ScriptedProvider([httpx.ConnectError("down")])
+        svc, weather = make_service(conn, provider, temp_c=5.0)
+        resp = recommend(conn, svc, weather)
+        assert resp.source == "fallback"
+        acc_slots = [oi for oi in resp.outfit if oi.slot == "accessory"]
+        assert acc_slots, "cold-day fallback outfit should include an accessory"
+        # A warmth-4 piece at 5°C (band 3-4): picked, never the warmth-1 watch.
+        assert acc_slots[0].item.id != 30  # id 30 = warmth-1 watch in seed data
+        # It must be part of the logged history too (stored as JSON ids).
+        rows = conn.execute("SELECT * FROM outfit_history").fetchall()
+        logged = json.loads(rows[0]["item_ids_json"])
+        assert logged and acc_slots[0].item.id in logged
+
     def test_weather_failure_assumes_mild_day(self, conn):
         provider = ScriptedProvider([])
         svc, weather = make_service(conn, provider, weather_fail=True)
@@ -110,7 +131,7 @@ class TestDegradation:
 
     def test_empty_wardrobe_returns_gaps_not_error(self, conn):
         svc = RecommendationService()
-        svc._provider = lambda url: ScriptedProvider([])
+        svc.provider_for = lambda url: ScriptedProvider([])
         resp = recommend(conn, svc, FakeWeatherService(18.0))
         assert resp.outfit == []
         assert resp.gaps
@@ -129,7 +150,82 @@ class TestDegradation:
                 (it["name"], it["type"], it["warmth"], it["formality"]),
             )
         svc = RecommendationService()
-        svc._provider = lambda url: ScriptedProvider([])
+        svc.provider_for = lambda url: ScriptedProvider([])
         resp = recommend(conn, svc, FakeWeatherService(2.0), occasion="gym")
         assert resp.outfit == []
         assert any("gym" in g for g in resp.gaps)
+
+
+class TestActivity:
+    """The 'what are you doing?' field: a stated activity guarantees a
+    warm-layer option (and the fallback wears it) even on a mild day."""
+
+    def _seed_dinner_wardrobe(self, conn):
+        for name, type_, category, warmth, formality in [
+            ("Tee", "top", "t_shirt", 2, 2),
+            ("Cardigan", "top", "cardigan", 3, 2),
+            ("Jeans", "bottom", "jeans", 2, 2),
+            ("Sneakers", "shoes", "sneakers", 2, 2),
+        ]:
+            conn.execute(
+                "INSERT INTO items (name, type, category, warmth, formality)"
+                " VALUES (?, ?, ?, ?, ?)",
+                (name, type_, category, warmth, formality),
+            )
+
+    def test_activity_fallback_includes_the_cardigan_layer(self, conn):
+        import httpx
+
+        self._seed_dinner_wardrobe(conn)
+        svc = RecommendationService()
+        svc.provider_for = lambda url: ScriptedProvider([httpx.ConnectError("down")])
+        resp = recommend(
+            conn, svc, FakeWeatherService(18.0),
+            mood="festive", activity="Christmas dinner",
+        )
+        categories = [oi.item.category for oi in resp.outfit]
+        assert "cardigan" in categories  # the guaranteed warm layer
+        assert resp.source == "fallback"
+
+    def test_no_activity_mild_day_skips_the_out_of_band_layer(self, conn):
+        import httpx
+
+        self._seed_dinner_wardrobe(conn)
+        svc = RecommendationService()
+        svc.provider_for = lambda url: ScriptedProvider([httpx.ConnectError("down")])
+        resp = recommend(conn, svc, FakeWeatherService(18.0), mood="chill")
+        categories = [oi.item.category for oi in resp.outfit]
+        assert "cardigan" not in categories
+
+    def test_llm_reply_without_layer_still_valid_with_activity(self, conn):
+        # The activity rule steers the prompt; a reply that skips the layer
+        # (a warm sweater as the top, say) still validates.
+        self._seed_dinner_wardrobe(conn)
+        svc = RecommendationService()
+        provider = ScriptedProvider([])
+        svc.provider_for = lambda url: provider
+        from app.services.candidates import select
+
+        rows = [dict(r) for r in conn.execute("SELECT * FROM items")]
+        cs = select(rows, 18.0, "casual", 20260905, activity="Christmas dinner")
+        tee = next(it["id"] for it in cs.slots["top"] if it["category"] == "t_shirt")
+        reply = json.dumps({
+            "title": "Dinner pick",
+            "item_ids": {
+                "top": tee,
+                "bottom": next(it["id"] for it in cs.slots["bottom"]),
+                "shoes": next(it["id"] for it in cs.slots["shoes"]),
+            },
+            "rationale": "r",
+        })
+        provider.replies = [reply]
+        resp = recommend(
+            conn, svc, FakeWeatherService(18.0),
+            mood="festive", activity="Christmas dinner",
+        )
+        assert resp.source == "llm"
+        assert resp.title == "Dinner pick"
+        # The activity reached the prompt.
+        assert 'What they\'ll be doing: "Christmas dinner"' in (
+            provider.calls[0][-1]["content"]
+        )

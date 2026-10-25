@@ -162,3 +162,181 @@ th.sortable.desc::after { content: " ↓"; opacity: 1; color: var(--accent); }
 .actions .spacer { flex: 1; }
 .muted { color: var(--muted); font-size: 0.85rem; font-family: -apple-system, sans-serif; }
 .error { color: #a33; font-family: -apple-system, sans-serif; font-size: 0.9rem; }
+
+/* --- Mobile app (PWA) --------------------------------------------- */
+
+/* Phone layouts: single column, comfortable touch targets. */
+@media (max-width: 640px) {
+  header { padding: 0.9rem 1rem; gap: 0.8rem; flex-wrap: wrap; }
+  main { margin: 1.2rem auto; padding: 0 0.9rem; }
+  .form-grid { grid-template-columns: 1fr; }
+  nav { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; }
+  nav a { margin-right: 0; }
+
+  table { font-size: 0.85rem; }
+  th, td { padding: 0.4rem 0.4rem; }
+  /* The wardrobe table scrolls horizontally rather than squashing. */
+  .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+  button { padding: 0.55rem 1rem; min-height: 44px; }
+  input, select, textarea { font-size: 1rem; } /* iOS zoom prevention */
+  #result .outfit-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Safe-area insets for notched phones in standalone mode. */
+@supports (padding: env(safe-area-inset-top)) {
+  header { padding-top: calc(1.2rem + env(safe-area-inset-top)); }
+  main { padding-bottom: calc(1rem + env(safe-area-inset-bottom)); }
+}
+
+.install-link {
+  margin-left: auto;
+  color: var(--accent) !important;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.install-steps { line-height: 1.7; padding-left: 1.2rem; }
+.install-steps li { margin-bottom: 0.5rem; }
+
+.qr-box {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 0.7rem; padding: 1.2rem; margin: 1rem 0;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+}
+.qr-box img { width: 220px; height: 220px; max-width: 60vw; max-height: 60vw; }
+
+/* Keep tables scrollable on narrow screens. */
+.card > table { display: block; overflow-x: auto; }
+
+/* --- Personas (multi-persona wardrobes) ---------------------------- */
+
+.persona-chips {
+  display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center;
+  margin: 0;
+}
+.persona-chips .persona-label { margin-right: 0.2rem; }
+
+.persona-chip {
+  border-radius: 999px;
+  padding: 0.2rem 0.85rem;
+  font-size: 0.85rem;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--muted);
+}
+.persona-chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.persona-row { margin-top: 0.4rem; }
+.persona-row .persona-chips { margin-bottom: 0.15rem; }
+#pair-hint { margin: 0.2rem 0 0; font-size: 0.8rem; }
+
+.persona-outfit { padding: 0.6rem 0 1rem; }
+.persona-outfit + .persona-outfit { border-top: 1px solid var(--line); margin-top: 0.6rem; }
+.persona-outfit-head {
+  display: flex; align-items: baseline; gap: 0.7rem; flex-wrap: wrap;
+}
+.persona-outfit-head h3 { margin: 0 0 0.4rem; font-weight: normal; font-size: 1.05rem; }
+.persona-outfit-title { font-size: 0.85rem; }
+
+.people-list { list-style: none; padding: 0; margin: 0.6rem 0 1rem; }
+.people-list li {
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.45rem 0; border-bottom: 1px solid var(--line);
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+}
+.people-list li span { flex: 1; font-size: 1rem; }
+.people-list li select.person-gender { width: auto; font-size: 0.85rem; }
+
+@media (max-width: 640px) {
+  .persona-chip { padding: 0.3rem 1rem; min-height: 36px; }
+}
+
+/* --- Bulk photo queue (wardrobe page) ------------------------------- */
+
+.bulk-rows {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+}
+.bulk-rows li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.bulk-rows li:last-child { border-bottom: none; }
+
+.bulk-thumb {
+  width: 44px; height: 44px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  display: block;
+  flex-shrink: 0;
+}
+.bulk-name {
+  flex: 1;
+  min-width: 8rem;
+  font-size: 0.95rem;
+  overflow-wrap: anywhere;
+}
+.bulk-chip { flex-shrink: 0; }
+.bulk-chip.ok { background: var(--accent-soft); color: var(--accent); }
+.bulk-chip.busy { background: #eee9f5; color: #5a4a7a; }
+.bulk-chip.fail { background: #f7e5e5; color: #a33; }
+.bulk-error {
+  flex-basis: 100%;
+  font-size: 0.8rem;
+  margin: 0;
+}
+.bulk-error:empty { display: none; }
+
+@media (max-width: 640px) {
+  .bulk-rows li { gap: 0.5rem; }
+  .bulk-thumb { width: 38px; height: 38px; }
+}
+
+.quick-add-row { margin-top: 0.4rem; }
+.quick-add-label {
+  display: flex; align-items: center; gap: 0.45rem;
+  font-family: -apple-system, "Helvetica Neue", sans-serif;
+  font-size: 0.85rem; color: var(--muted);
+  text-transform: none; letter-spacing: 0;
+  margin-bottom: 0;
+}
+.quick-add-label input { width: auto; }
+
+/* --- Multi-item photos: Save-all + per-draft queue rows ---------------- */
+
+/* "Save all" sits next to Clear in the queue card header; keep it a touch
+   quieter than the primary form button so it reads as a bulk action. */
+#bulk-save-all { padding: 0.35rem 0.85rem; font-size: 0.85rem; }
+#bulk-save-all:disabled { opacity: 0.5; cursor: wait; }
+
+/* Draft-name labels inside queue rows (per-draft rows after completion);
+   a slightly stronger weight separates drafts from raw filenames. */
+.bulk-row-label { font-weight: 500; }
+
+/* Option chips on the Ask page: mark alternatives (option 2..n) within one
+   request — same shape language as the persona chips, smaller. */
+.option-chip {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--accent, #b4552d);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 500;
+  vertical-align: middle;
+}

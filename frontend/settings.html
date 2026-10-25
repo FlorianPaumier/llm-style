@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b4552d">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="llm-style">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>llm-style — settings</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -43,10 +50,33 @@
           <span class="muted" id="status"></span>
         </div>
       </form>
-      <p class="muted">The stylist runs on your machine via Ollama — your wardrobe never leaves it.</p>
+      <p class="muted">Leave a field blank to use its default (shown as a hint in the field). The stylist runs on your machine via Ollama — your wardrobe never leaves it.</p>
+    </div>
+
+    <div class="card">
+      <h2>People</h2>
+      <p class="muted">Each person has their own wardrobe and outfit history. Settings and the stylist model are shared. "Notes" are styling preferences the stylist must respect — e.g. <em>“no hats — they don't suit me”</em> or <em>“prefers bold colors”</em>.</p>
+      <ul id="people-list" class="people-list"></ul>
+      <form id="person-form" class="actions" style="flex-wrap: wrap;">
+        <input id="person-name" maxlength="50" placeholder="name, e.g. Anna" style="max-width: 160px;">
+        <select id="person-gender" style="width: auto;">
+          <option value="">gender (optional)</option>
+          <option value="male">male</option>
+          <option value="female">female</option>
+        </select>
+        <input id="person-notes" maxlength="500" placeholder="styling notes (optional), e.g. no hats" style="flex: 1; min-width: 180px;">
+        <button type="submit" class="primary">Add person</button>
+        <span class="error" id="person-error"></span>
+      </form>
     </div>
   </main>
 
+  <script src="persona.js"></script>
   <script src="settings.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
 </body>
 </html>

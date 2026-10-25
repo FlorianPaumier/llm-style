@@ -3,6 +3,13 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#b4552d">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="/icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="llm-style">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>llm-style — what to wear</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -13,6 +20,7 @@
       <a href="index.html" class="active">Ask</a>
       <a href="wardrobe.html">Wardrobe</a>
       <a href="settings.html">Settings</a>
+      <a href="install.html" class="install-link">Get the app</a>
     </nav>
   </header>
 
@@ -26,6 +34,15 @@
             <textarea id="mood" name="mood" rows="2" maxlength="500"
               placeholder="e.g. feeling cosy and chill, want something soft and unstructured"></textarea>
           </div>
+          <div class="wide">
+            <label for="activity">What are you doing? (optional)</label>
+            <input id="activity" name="activity" maxlength="200"
+              placeholder="e.g. Christmas dinner, zoo day, wedding day…">
+          </div>
+          <div class="wide persona-row">
+            <div id="persona-picker" class="persona-chips"></div>
+            <p class="muted" id="pair-hint" hidden></p>
+          </div>
           <div>
             <label for="occasion">Occasion</label>
             <select id="occasion" name="occasion">
@@ -34,6 +51,14 @@
               <option value="work">Work</option>
               <option value="smart">Smart</option>
               <option value="formal">Formal</option>
+            </select>
+          </div>
+          <div>
+            <label for="count">How many options?</label>
+            <select id="count" name="count">
+              <option value="1" selected>1 — just one</option>
+              <option value="3">3 — a few to compare</option>
+              <option value="5">5 — spoil me</option>
             </select>
           </div>
           <div>
@@ -51,14 +76,18 @@
 
     <div id="result" hidden>
       <div class="card">
-        <h2 id="outfit-title"></h2>
-        <div class="outfit-grid" id="outfit-grid"></div>
-        <p class="rationale" id="outfit-rationale"></p>
-        <ul class="gaps" id="outfit-gaps"></ul>
+        <div id="persona-results"></div>
       </div>
     </div>
   </main>
 
+  <script src="persona.js"></script>
+  <script src="categories.js"></script>
   <script src="app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  </script>
 </body>
 </html>

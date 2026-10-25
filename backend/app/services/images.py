@@ -1,12 +1,15 @@
-"""Image storage: save uploaded wardrobe photos under data/images/.
+"""Image storage: uploaded wardrobe photos live under data/images/.
 
-Files are named by item id (or a temp prefix while the item is still a
-draft), stored with their original extension, and served back by the
-API. Deleting an item also deletes its photo.
+Photos are addressed by opaque tokens, never filesystem paths:
+- /api/classify saves a draft photo and returns its token (draft-<hex>.<ext>).
+- Saving the item claims the token: the file is renamed to <item_id>.<ext>.
+- Every read/delete resolves the stored name strictly inside IMAGES_DIR,
+  so a client-supplied string can never point outside the images dir.
 """
 from __future__ import annotations
 
 import os
+import re
 import time
 import uuid
 from pathlib import Path
@@ -15,6 +18,11 @@ from ..config import DATA_DIR
 
 MAX_IMAGE_BYTES = 10 * 1024 * 1024  # 10 MB
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+
+# A stored photo name is either a fresh draft (from /api/classify) or an
+# item's claimed file; the regex has no separators or traversal, so names
+# can only ever resolve inside the images dir.
+PHOTO_NAME_RE = re.compile(r"^(?:draft-[0-9a-f]{12}|\d+)\.(?:jpg|jpeg|png|webp)$")
 
 # Overridable so tests store images in a temp dir instead of real data/.
 IMAGES_DIR = Path(os.environ.get("LLM_STYLE_IMAGES_DIR", str(DATA_DIR / "images")))
@@ -31,46 +39,58 @@ def validate_extension(filename: str) -> str:
     return ext if ext in ALLOWED_EXTENSIONS else ""
 
 
-def save_draft_image(data: bytes, ext: str) -> Path:
-    """Persist an uploaded photo for a not-yet-created item; returns its path."""
-    target_dir = images_dir()
-    unique = f"draft-{uuid.uuid4().hex[:12]}{ext}"
-    path = target_dir / unique
-    path.write_bytes(data)
-    return path
+def photo_path(name: str | None) -> Path | None:
+    """Resolve a stored photo name to a path inside IMAGES_DIR, or None."""
+    if not name or not PHOTO_NAME_RE.match(name):
+        return None
+    return images_dir() / name
 
 
-def claim_image(draft_path: str | Path, item_id: int) -> str | None:
-    """Rename draft-<uuid>.<ext> to <item_id>.<ext> once the item exists.
+def draft_exists(token: str) -> bool:
+    """True if token refers to a draft photo still on disk."""
+    if not token.startswith("draft-"):
+        return False
+    path = photo_path(token)
+    return path is not None and path.is_file()
 
-    Returns the final relative path (stored in the DB), or None if the
-    draft path is missing/invalid. Idempotent: a path already named for
-    the item is returned as-is.
+
+def save_draft_image(data: bytes, ext: str) -> str:
+    """Persist an uploaded photo for a not-yet-created item; return its token."""
+    token = f"draft-{uuid.uuid4().hex[:12]}{ext}"
+    (images_dir() / token).write_bytes(data)
+    return token
+
+
+def claim_image(token: str, item_id: int) -> str | None:
+    """Rename draft-<hex>.<ext> to <item_id>.<ext> once the item exists.
+
+    Returns the final stored name, or None if the token is not a live draft
+    for this item. Idempotent for a name already owned by the item; refuses
+    any name belonging to anything else.
     """
-    draft = Path(draft_path)
-    if not draft.name.startswith("draft-"):
-        return str(draft)  # already claimed or externally provided
-
-    ext = draft.suffix.lower()
-    if ext not in ALLOWED_EXTENSIONS:
+    if not token or not PHOTO_NAME_RE.match(token):
         return None
-    final = images_dir() / f"{item_id}{ext}"
-    if draft.exists():
-        draft.rename(final)
-    elif not final.exists():
-        return None
-    return str(final)
+    ext = Path(token).suffix.lower()
+    final = f"{item_id}{ext}"
+    if token.startswith("draft-"):
+        src = images_dir() / token
+        dst = images_dir() / final
+        if src.is_file():
+            src.rename(dst)
+        elif not dst.is_file():
+            return None
+        return final
+    return token if token == final else None
 
 
-def delete_image(image_path: str | None) -> None:
+def delete_image(name: str | None) -> None:
     """Remove an item's photo file, if it lives in our images dir."""
-    if not image_path:
+    path = photo_path(name)
+    if path is None:
         return
-    path = Path(image_path)
     try:
-        if path.parent.resolve() == images_dir().resolve() and path.exists():
-            path.unlink()
-    except (OSError, ValueError):
+        path.unlink(missing_ok=True)
+    except OSError:
         pass  # best effort; a stray file is harmless
 
 
